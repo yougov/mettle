@@ -15,6 +15,7 @@ setup_params = dict(
     include_package_data=True,
     install_requires=[
         'appsettings==0.5',
+        'sqlalchemy==0.9.8',
     ],
     description='A robust framework for scheduling and executing ETL jobs.',
 )

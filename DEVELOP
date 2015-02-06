@@ -1,0 +1,9 @@
+1. Get a YG vagrant environment up.  See
+https://yougov.kilnhg.com/Code/Repositories/Systems/yg-app-base-image/Files/README.md?rev=tip.
+SSH into it, and 'cd /vagrant/mettle'.
+
+2. Run ./dbsetup.sh
+
+3. mkvirtualenv mettle
+
+4. pip install -e .

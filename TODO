@@ -1,0 +1,19 @@
+- Create initial SQLAlchemy models.
+- Proof-of-concept 'timer' proc using "sched".
+- ETL service wrapper
+- dispatcher
+- log collector
+- ui
+    - create a pipeline group
+    - create a pipeline
+        - name
+        - schedule
+        - num retries
+    - list all pipelines
+    - show all current jobs
+    - show job log
+        - past output
+        - current streaming output
+    - see recent jobs by pipeline
+    - re-launch a failed job
+    - launch pipeline with arbitrary target time
