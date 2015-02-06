@@ -3,11 +3,19 @@ BEGIN;
 CREATE TABLE services (
 	id SERIAL NOT NULL, 
 	name TEXT NOT NULL, 
-	broker TEXT NOT NULL, 
 	description TEXT, 
 	updated_by TEXT NOT NULL, 
 	PRIMARY KEY (id), 
 	UNIQUE (name)
+);
+
+
+CREATE TABLE notification_lists (
+	id SERIAL NOT NULL, 
+	name TEXT NOT NULL, 
+	recipients TEXT[] NOT NULL, 
+	updated_by TEXT NOT NULL, 
+	PRIMARY KEY (id)
 );
 
 
@@ -24,26 +32,23 @@ CREATE TABLE change_records (
 );
 
 
-CREATE TABLE notification_lists (
-	id SERIAL NOT NULL, 
-	name TEXT NOT NULL, 
-	recipients TEXT[] NOT NULL, 
-	updated_by TEXT NOT NULL, 
-	PRIMARY KEY (id)
-);
-
-
 CREATE TABLE pipelines (
 	id SERIAL NOT NULL, 
 	name TEXT NOT NULL, 
 	service_id INTEGER NOT NULL, 
-	schedule JSON, 
 	notification_list_id INTEGER NOT NULL, 
 	updated_by TEXT NOT NULL, 
+	active BOOLEAN DEFAULT true NOT NULL, 
+	retries INTEGER, 
+	crontab TEXT, 
+	chained_from_id INTEGER, 
 	PRIMARY KEY (id), 
 	UNIQUE (name, service_id), 
+	CONSTRAINT crontab_or_pipeline_check CHECK (crontab IS NOT NULL OR chained_from_id IS NOT NULL), 
+	CONSTRAINT crontab_and_pipeline_check CHECK (NOT (crontab IS NOT NULL AND chained_from_id IS NOT NULL)), 
 	FOREIGN KEY(service_id) REFERENCES services (id), 
-	FOREIGN KEY(notification_list_id) REFERENCES notification_lists (id)
+	FOREIGN KEY(notification_list_id) REFERENCES notification_lists (id), 
+	FOREIGN KEY(chained_from_id) REFERENCES pipelines (id)
 );
 
 
@@ -53,6 +58,8 @@ CREATE TABLE pipeline_runs (
 	created_time TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL, 
 	target_time TIMESTAMP WITH TIME ZONE NOT NULL, 
 	ack_time TIMESTAMP WITH TIME ZONE, 
+	targets TEXT[], 
+	end_time TIMESTAMP WITH TIME ZONE, 
 	started_by TEXT NOT NULL, 
 	PRIMARY KEY (id), 
 	FOREIGN KEY(pipeline_id) REFERENCES pipelines (id)
@@ -66,6 +73,8 @@ CREATE TABLE jobs (
 	in_progress BOOLEAN NOT NULL, 
 	status INTEGER NOT NULL, 
 	hostname TEXT, 
+	expires TIMESTAMP WITH TIME ZONE, 
+	retries_remaining INTEGER NOT NULL, 
 	created_time TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL, 
 	start_time TIMESTAMP WITH TIME ZONE NOT NULL, 
 	end_time TIMESTAMP WITH TIME ZONE NOT NULL, 
@@ -86,6 +95,5 @@ CREATE TABLE job_log_lines (
 );
 
 CREATE UNIQUE INDEX unique_log_line ON job_log_lines (job_id, line_num);
-
 INSERT INTO migration_history (name) VALUES ('0002-initial-tables');
 COMMIT;

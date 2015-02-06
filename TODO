@@ -1,4 +1,3 @@
-- Create initial SQLAlchemy models.
 - Proof-of-concept 'timer' proc using "sched".
 - ETL service wrapper
 - dispatcher

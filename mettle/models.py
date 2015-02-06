@@ -4,6 +4,10 @@ from sqlalchemy.dialects.postgresql import (ARRAY, JSON)
 from sqlalchemy import (Column, Integer, Text, ForeignKey, DateTime, Boolean,
                         func, CheckConstraint)
 from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.sql.expression import text
+from sqlalchemy.orm import relationship, backref, validates
+from croniter import croniter
+import utc
 
 
 Base = declarative_base()
@@ -13,13 +17,20 @@ class Service(Base):
     __tablename__ = 'services'
     id = Column(Integer, primary_key=True)
     name = Column(Text, nullable=False)
-    broker = Column(Text, nullable=False)
     description = Column(Text)
     updated_by = Column(Text, nullable=False)
+
+    @validates('name')
+    def validate_name(self, key, name):
+        assert '.' not in name
+        return name
 
     __table_args__ = (
         UniqueConstraint('name'),
     )
+
+    def __repr__(self):
+        return 'Service <%s>' % self.name
 
 
 class NotificationList(Base):
@@ -28,6 +39,8 @@ class NotificationList(Base):
     name = Column(Text, nullable=False)
     recipients = Column(ARRAY(Text), nullable=False)
     updated_by = Column(Text, nullable=False)
+    def __repr__(self):
+        return 'NotificationList <%s>' % self.name
 
 
 class Pipeline(Base):
@@ -35,13 +48,46 @@ class Pipeline(Base):
     id = Column(Integer, primary_key=True)
     name = Column(Text, nullable=False)
     service_id = Column(Integer, ForeignKey('services.id'), nullable=False)
-    schedule = Column(MutableDict.as_mutable(JSON), default={})
     notification_list_id = Column(Integer, ForeignKey('notification_lists.id'),
                                   nullable=False)
     updated_by = Column(Text, nullable=False)
+    active = Column(Boolean, nullable=False, server_default=text('true'))
+
+    retries = Column(Integer, default=3)
+
+    service = relationship("Service", backref=backref('pipelines', order_by=name))
+    notification_list = relationship('NotificationList',
+                                     backref=backref('pipelines', order_by=name))
+
+    # A pipeline must have either a crontab or a trigger pipeline, but not both.
+    crontab = Column(Text)
+    chained_from_id = Column(Integer, ForeignKey('pipelines.id'))
+    chained_from = relationship(lambda: Pipeline, remote_side=id,
+                                backref='chains_to')
+
+    @validates('name')
+    def validate_name(self, key, name):
+        assert '.' not in name
+        return name
+
+    @validates('crontab')
+    def validate_crontab(self, key, cronspec):
+        if cronspec is not None:
+            # If the cronspec is not parseable, croniter will raise an exception
+            # here.
+            croniter(cronspec, utc.now())
+        return cronspec
+
     __table_args__ = (
         UniqueConstraint('name', 'service_id'),
+        CheckConstraint('crontab IS NOT NULL OR chained_from_id IS NOT NULL',
+                        name='crontab_or_pipeline_check'),
+        CheckConstraint('NOT (crontab IS NOT NULL AND chained_from_id IS NOT NULL)',
+                        name='crontab_and_pipeline_check'),
     )
+
+    def __repr__(self):
+        return 'Pipeline <%s>' % self.name
 
 
 class PipelineRun(Base):
@@ -52,7 +98,18 @@ class PipelineRun(Base):
                   server_default=func.now())
     target_time = Column(DateTime(timezone=True), nullable=False)
     ack_time = Column(DateTime(timezone=True))
+
+    # We'll periodically check to see if each target in the pipeline run has a
+    # successfully completed job.  Once they all do, we can set the end_time for
+    # this run.  That will stop the timer proc from announcing the run anymore.
+    targets = Column(ARRAY(Text), default=[])
+    end_time = Column(DateTime(timezone=True))
+
+    # either 'timer', or name of the user who manually started the pipeline run.
     started_by = Column(Text, nullable=False)
+
+    pipeline = relationship("Pipeline", backref=backref('pipeline_runs',
+                                                        order_by=created_time))
 
 
 class Job(Base):
@@ -78,7 +135,8 @@ class Job(Base):
 
     status = Column(Integer, nullable=False)
     hostname = Column(Text)
-    expires = Column
+    expires = Column(DateTime(timezone=True))
+    retries_remaining = Column(Integer, nullable=False)
 
     # The time that the dispatcher created this job record
     created_time = Column(DateTime(timezone=True), nullable=False,
@@ -112,8 +170,8 @@ class JobLogLine(Base):
     )
 
 
-# TODO: Add a trigger to changes on Service, NotificationList, and Pipeline, to
-# record all changes in this table.
+# This table is populated by triggers on services, pipelines, and
+# notification_lists
 class ChangeRecord(Base):
     __tablename__ = 'change_records'
     id = Column(Integer, primary_key=True)
