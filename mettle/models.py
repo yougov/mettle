@@ -22,8 +22,13 @@ class Service(Base):
 
     @validates('name')
     def validate_name(self, key, name):
+        # Ensure that the name has no characters that have special meanings in
+        # RabbitMQ routing keys.
         assert '.' not in name
+        assert '*' not in name
+        assert '#' not in name
         return name
+
 
     __table_args__ = (
         UniqueConstraint('name'),
@@ -67,7 +72,11 @@ class Pipeline(Base):
 
     @validates('name')
     def validate_name(self, key, name):
+        # Ensure that the name has no characters that have special meanings in
+        # RabbitMQ routing keys.
         assert '.' not in name
+        assert '*' not in name
+        assert '#' not in name
         return name
 
     @validates('crontab')

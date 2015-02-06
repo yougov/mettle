@@ -5,7 +5,7 @@ import utc
 from croniter import croniter
 import pika
 
-from mettle.models import Pipeline, PipelineRun
+from mettle.models import Pipeline, PipelineRun, Job, JobLogLine
 from mettle.settings import get_settings
 from mettle.db import make_session_cls, parse_pgurl
 from mettle.protocol import announce_pipeline_run
@@ -26,11 +26,9 @@ class crontimes(croniter):
     __next__ = next = get_next
 
 
-def check_pipelines(settings):
-    db = make_session_cls(settings.db_url)()
-    rabbit = pika.BlockingConnection(pika.URLParameters(settings.rabbit_url))
+def check_pipelines(settings, db, rabbit):
+    print "Checking pipelines."
 
-    # connect to database
     pipelines = db.query(Pipeline).filter(
         Pipeline.active==True,
         Pipeline.crontab!=None,
@@ -42,7 +40,6 @@ def check_pipelines(settings):
     start = now - timedelta(days=settings.lookback_days)
     for pipeline in pipelines:
         for target_time in crontimes(pipeline.crontab, start):
-            print "target_time", target_time
             if target_time < now:
                 ensure_pipeline_run(db, pipeline, target_time)
             else:
@@ -58,10 +55,6 @@ def check_pipelines(settings):
 
     for run in runs:
         announce_pipeline_run(run, rabbit)
-
-    # for any that aren't yet in the database, create them.
-
-    # announce any pipeline runs that do not yet have an ack time. 
 
 
 def ensure_pipeline_run(db, pipeline, target_time):
@@ -80,14 +73,12 @@ def ensure_pipeline_run(db, pipeline, target_time):
             started_by='timer',
         )
         db.add(run)
-
-        # Only announce the run if we can actually save it.  We'll
-        # need the run ID as part of the announcement anyway.
         db.commit()
         print "Created new pipeline run", run.id
 
 
-def check_jobs(settings):
+def check_jobs(db, rabbit):
+    print "Checking jobs."
 
     # find any in_progress jobs whose expiration is in the past, and who haven't
     # had any log messages in X minutes.  Mark them as failed.
@@ -113,18 +104,33 @@ def check_jobs(settings):
     pass
 
 
-def cleanup_logs(settings):
-    # Delete old logs (older than max_log_days)
-    pass
+def cleanup_logs(settings, db):
+    print "Cleaning up old logs."
+    cutoff_time = utc.now() - timedelta(days=settings.max_log_days)
+    db.query(JobLogLine).filter(
+        JobLogLine.received_time<cutoff_time
+    ).delete(synchronize_session=False)
+    db.commit()
+
+
+def do_scheduled_tasks(settings):
+    start_time = utc.now()
+    db = make_session_cls(settings.db_url)()
+    rabbit_conn = pika.BlockingConnection(pika.URLParameters(settings.rabbit_url))
+    rabbit = rabbit_conn.channel()
+
+    check_pipelines(settings, db, rabbit)
+    check_jobs(db, rabbit)
+    cleanup_logs(settings, db)
+    run_time = utc.now() - start_time
+    print ("Finished scheduled tasks.  Took %s seconds" %
+           run_time.total_seconds())
 
 
 def main():
     settings = get_settings()
     while True:
-        print "Checking pipelines"
-        check_pipelines(settings)
-        check_jobs(settings)
-        cleanup_logs(settings)
+        do_scheduled_tasks(settings)
         print "Sleeping for %s seconds" % settings.timer_sleep_secs
         time.sleep(settings.timer_sleep_secs)
 
