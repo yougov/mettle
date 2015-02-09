@@ -15,12 +15,18 @@ setup_params = dict(
     include_package_data=True,
     install_requires=[
         'croniter==0.3.5',
-        'pika==0.9.14',
         'psycopg2==2.5.4',
         'sqlalchemy==0.9.8',
         'Werkzeug==0.10.1',
-        'utc==0.0.3',
+        'mettle-protocol',
+        'pika',
+        'utc',
     ],
+    entry_points={
+        'console_scripts': [
+            'mettle = mettle.cli:main',
+        ]
+    },
     description='A robust framework for scheduling and executing ETL jobs.',
 )
 

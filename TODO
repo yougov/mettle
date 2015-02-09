@@ -1,6 +1,3 @@
-- Proof-of-concept 'timer' proc using "sched".
-- ETL service wrapper
-- dispatcher
 - log collector
 - ui
     - create a pipeline group

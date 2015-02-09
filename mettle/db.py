@@ -19,5 +19,5 @@ def parse_pgurl(db_url):
         'port': parsed.port,
     }
 
-def make_session_cls(db_url):
-    return sessionmaker(bind=create_engine(db_url))
+def make_session_cls(db_url, echo=False):
+    return sessionmaker(bind=create_engine(db_url, echo=echo))

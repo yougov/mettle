@@ -17,6 +17,8 @@ DEFAULTS = {
     # that a job is still alive and kicking, even if it's past its expiration
     # date.
     'job_log_lookback_minutes': 10,
+
+    'web_worker_timeout': 30,
 }
 
 
