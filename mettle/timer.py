@@ -1,3 +1,4 @@
+import logging
 import time
 from datetime import datetime, timedelta
 
@@ -12,6 +13,8 @@ from mettle.db import make_session_cls, parse_pgurl
 from mettle.lock import lock_and_announce_run, lock_and_announce_job
 from mettle.email import email_pipeline_group
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 # Subclass croniter so it returns datetimes by default instead of floats
 class crontimes(croniter):
@@ -29,7 +32,7 @@ class crontimes(croniter):
 
 
 def check_pipelines(settings, db, rabbit):
-    print "Checking pipelines."
+    logger.info("Checking pipelines.")
 
     pipelines = db.query(Pipeline).filter(
         Pipeline.active==True,
@@ -86,11 +89,11 @@ def ensure_pipeline_run(db, pipeline, target_time):
             started_by='timer',
         )
         db.add(run)
-        print "Created new pipeline run", run.id
+        logger.info("Created new pipeline run %s" % run.id)
 
 
 def check_jobs(settings, db, rabbit):
-    print "Checking jobs."
+    logger.info("Checking jobs.")
 
     now = utc.now()
     expired_jobs = db.query(Job).filter(
@@ -111,11 +114,11 @@ def check_jobs(settings, db, rabbit):
             msg = """Job {target_time} {target}, from pipeline {pipeline} has
             passed its expire time, but is still emitting log output.  Will let
             it continue.  Please consider modifiying the service to provide a
-            more accurate expiration time.""".format({
-                'target_time': job.target_time.isoformat(),
-                'target': job.target,
-                'pipeline': pipeline.name,
-            })
+            more accurate expiration time.""".format(
+                target_time=job.pipeline_run.target_time.isoformat(),
+                target=job.target,
+                pipeline=pipeline.name,
+            )
             email_pipeline_group(db, pipeline, subj, msg)
         else:
             # This expired job is no longer doing stuff.  As far as we can tell.
@@ -134,11 +137,11 @@ def check_jobs(settings, db, rabbit):
                 subj = "Job %s out of retries" % job.target
                 msg = """Job {target_time} {target}, from pipeline {pipeline} has
                 passed its expire time, is no longer emitting log output, and
-                has no retries remaining.  You should look into it.""".format({
-                    'target_time': job.target_time.isoformat(),
-                    'target': job.target,
-                    'pipeline': pipeline.name,
-                })
+                has no retries remaining.  You should look into it.""".format(
+                    target_time=job.pipeline_run.target_time.isoformat(),
+                    target=job.target,
+                    pipeline=pipeline.name,
+                )
                 email_pipeline_group(db, pipeline, subj, msg)
     db.commit()
 
@@ -152,7 +155,7 @@ def check_jobs(settings, db, rabbit):
         lock_and_announce_job(db, rabbit, job)
 
 def cleanup_logs(settings, db):
-    print "Cleaning up old logs."
+    logger.info("Cleaning up old logs.")
     cutoff_time = utc.now() - timedelta(days=settings.max_log_days)
     db.query(JobLogLine).filter(
         JobLogLine.received_time<cutoff_time
@@ -170,7 +173,7 @@ def do_scheduled_tasks(settings):
     cleanup_logs(settings, db)
     db.commit()
     run_time = utc.now() - start_time
-    print ("Finished scheduled tasks.  Took %s seconds" %
+    logger.info("Finished scheduled tasks.  Took %s seconds" %
            run_time.total_seconds())
 
 
@@ -178,7 +181,7 @@ def main():
     settings = get_settings()
     while True:
         do_scheduled_tasks(settings)
-        print "Sleeping for %s seconds" % settings.timer_sleep_secs
+        logger.info("Sleeping for %s seconds" % settings.timer_sleep_secs)
         time.sleep(settings.timer_sleep_secs)
 
 

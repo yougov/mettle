@@ -3,7 +3,7 @@ import os
 import yaml
 
 DEFAULTS = {
-    'timer_sleep_secs': 5,
+    'timer_sleep_secs': 60,
     'db_url': 'postgresql://postgres@/mettle',
     'rabbit_url': 'amqp://guest:guest@localhost:5672/%2f',
 

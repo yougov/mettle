@@ -1,7 +1,9 @@
 import json
 import logging
+import textwrap
 
 import pika
+from sqlalchemy.exc import IntegrityError
 
 from mettle.settings import get_settings
 from mettle.models import JobLogLine
@@ -30,13 +32,37 @@ def main():
     for method, properties, body in rabbit.consume(queue=queue_name):
         db = Session()
         data = json.loads(body)
-        db.add(JobLogLine(
-            job_id=data['job_id'],
-            line_num=data['line_num'],
-            message=data['msg'],
-        ))
-        logger.info(data['msg'])
-        db.commit()
+        job_id = data['job_id']
+        line_num = data['line_num']
+        message = data['msg']
+        try:
+            db.add(JobLogLine(
+                job_id=job_id,
+                line_num=line_num,
+                message=message,
+            ))
+            db.commit()
+            logger.info(message)
+        except IntegrityError:
+            # We probably got a duplicate log line, which can happen given
+            # Rabbit retries.  Query DB for log line matching job_id and
+            # line_num.  If we have one, and it is the same message, then just
+            # carry on.  If the message is different, then log an error.
+            db.rollback()
+            existing_line = db.query(JobLogLine).filter_by(job_id=job_id,
+                                                           line_num=line_num).one()
+            if existing_line.message != message:
+                err = """Job {job_id}, log line {num} is stored as {old}, but
+                      the queue has just produced a new message for the same
+                      line, with this value: {new}"""
+
+                logger.error(textwrap.dedent(err).format(
+                    job_id=job_id,
+                    num=line_num,
+                    old=existing_line.message,
+                    new=message,
+                ))
+
         rabbit.basic_ack(method.delivery_tag)
 
 if __name__ == '__main__':
