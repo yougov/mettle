@@ -29,11 +29,11 @@ def main():
     host = 'localhost'
     vhost = '/'
     exchanges = [
-        mp.ANNOUNCE_PIPELINE_RUN_EXCHANGE,
-        mp.ACK_PIPELINE_RUN_EXCHANGE,
-        mp.ANNOUNCE_JOB_EXCHANGE,
-        mp.ACK_JOB_EXCHANGE,
-        mp.END_JOB_EXCHANGE,
+        #mp.ANNOUNCE_PIPELINE_RUN_EXCHANGE,
+        #mp.ACK_PIPELINE_RUN_EXCHANGE,
+        #mp.ANNOUNCE_JOB_EXCHANGE,
+        #mp.ACK_JOB_EXCHANGE,
+        #mp.END_JOB_EXCHANGE,
         mp.JOB_LOGS_EXCHANGE,
     ]
 

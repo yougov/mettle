@@ -4,6 +4,7 @@ import os
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 from geventwebsocket.gunicorn.workers import GeventWebSocketWorker
+from werkzeug.wsgi import SharedDataMiddleware
 
 from mettle.web.framework import App
 from mettle.web import views
@@ -20,6 +21,10 @@ routes = [
 ]
 
 app = App(routes, get_settings())
+
+app = SharedDataMiddleware(app, {
+    '/static': ('mettle', 'static')
+})
 
 if __name__ == "__main__":
     server = pywsgi.WSGIServer(('', int(os.getenv('PORT', 8000))), app,

@@ -16,6 +16,7 @@ def main():
         'web': run_web,
         'dispatcher': run_dispatcher,
         'timer': run_timer,
+        'logcollector': run_logcollector,
     }
 
     cmd_help = "one of: %s" % ', '.join(sorted(commands.keys()))
@@ -67,3 +68,8 @@ def run_dispatcher():
 def run_timer():
     from mettle import timer
     timer.main()
+
+
+def run_logcollector():
+    from mettle import logcollector
+    logcollector.main()

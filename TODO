@@ -1,4 +1,9 @@
 - log collector
+- support pipeline chaining
+    - move pipeline done check to separate module
+    - call that check from both timer and dispatcher
+    - when a pipeline run is done, look for any other pipelines chained from it.
+    - if you see any, then create the runs, lock_and_announce.
 - ui
     - create a pipeline group
     - create a pipeline

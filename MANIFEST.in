@@ -1,2 +1,2 @@
-recursive-include mettle/ui/ *
+recursive-include mettle/static/ *
 recursive-include migrations/ *
