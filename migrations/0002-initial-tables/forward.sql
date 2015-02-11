@@ -1,11 +1,10 @@
 BEGIN;
-CREATE TABLE services (
+CREATE TABLE notification_lists (
 	id SERIAL NOT NULL, 
 	name TEXT NOT NULL, 
-	description TEXT, 
+	recipients TEXT[] NOT NULL, 
 	updated_by TEXT NOT NULL, 
-	PRIMARY KEY (id), 
-	UNIQUE (name)
+	PRIMARY KEY (id)
 );
 
 CREATE TABLE change_records (
@@ -20,12 +19,13 @@ CREATE TABLE change_records (
 	PRIMARY KEY (id)
 );
 
-CREATE TABLE notification_lists (
+CREATE TABLE services (
 	id SERIAL NOT NULL, 
 	name TEXT NOT NULL, 
-	recipients TEXT[] NOT NULL, 
+	description TEXT, 
 	updated_by TEXT NOT NULL, 
-	PRIMARY KEY (id)
+	PRIMARY KEY (id), 
+	UNIQUE (name)
 );
 
 CREATE TABLE pipelines (
@@ -72,13 +72,13 @@ CREATE TABLE jobs (
 	retries_remaining INTEGER NOT NULL, 
 	created_time TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL, 
 	start_time TIMESTAMP WITH TIME ZONE, 
-	hostname TEXT, 
+	assigned_worker TEXT, 
 	expires TIMESTAMP WITH TIME ZONE, 
 	end_time TIMESTAMP WITH TIME ZONE, 
 	PRIMARY KEY (id), 
 	CONSTRAINT job_succeeded_without_end_check CHECK (NOT (succeeded AND end_time IS NULL)), 
 	CONSTRAINT job_end_without_start_check CHECK (NOT (end_time IS NOT NULL AND start_time IS NULL)), 
-	CONSTRAINT job_start_without_hostname_check CHECK (NOT (start_time IS NOT NULL AND hostname IS NULL)), 
+	CONSTRAINT job_start_without_worker_check CHECK (NOT (start_time IS NOT NULL AND assigned_worker IS NULL)), 
 	CONSTRAINT job_start_without_expire_check CHECK (NOT (start_time IS NOT NULL AND expires IS NULL)), 
 	FOREIGN KEY(pipeline_run_id) REFERENCES pipeline_runs (id)
 );

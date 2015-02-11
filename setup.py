@@ -15,9 +15,16 @@ setup_params = dict(
     include_package_data=True,
     install_requires=[
         'croniter==0.3.5',
+        'gevent==1.0.1',
+        'gevent-websocket==0.9.3',
+        'gunicorn==19.1.1',
+        'psycogreen==1.0',
         'psycopg2==2.5.4',
+        'PyYAML==3.11',
         'sqlalchemy==0.9.8',
         'Werkzeug==0.10.1',
+
+        # leave mettle-protocol and its dependencies unversioned for now.
         'mettle-protocol',
         'pika',
         'utc',

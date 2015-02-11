@@ -42,7 +42,10 @@ def lock_and_announce_job(db, rabbit, job):
 
     try:
         with db.begin(subtransactions=True):
-            db.query(Job).filter(Job.id==job.id).with_lockmode('update_nowait').one()
+            db.query(Job).filter(
+                Job.id==job.id,
+                Job.start_time==None
+            ).with_lockmode('update_nowait').one()
             run = job.pipeline_run
             pipeline = run.pipeline
             mp.announce_job(rabbit, pipeline.service.name, pipeline.name,

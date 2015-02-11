@@ -18,7 +18,7 @@ if [ -d tmp ]; then
 fi
 
 # Delete Rabbit exchanges.
-scripts/rabbitmqadmin delete exchange name=mettle_ack_job
+scripts/rabbitmqadmin delete exchange name=mettle_claim_job
 scripts/rabbitmqadmin delete exchange name=mettle_ack_pipeline_run
 scripts/rabbitmqadmin delete exchange name=mettle_announce_job
 scripts/rabbitmqadmin delete exchange name=mettle_announce_pipeline_run

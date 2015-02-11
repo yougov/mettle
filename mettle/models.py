@@ -170,7 +170,7 @@ class Job(Base):
     # These fields are populated when we receive an ack for the job from the ETL
     # service.
     start_time = Column(DateTime(timezone=True))
-    hostname = Column(Text)
+    assigned_worker = Column(Text)
     expires = Column(DateTime(timezone=True))
 
     # And end_time is populated either when we receive a job_end message from
@@ -191,8 +191,8 @@ class Job(Base):
         CheckConstraint('NOT (end_time IS NOT NULL AND start_time IS NULL)',
                         name='job_end_without_start_check'),
         # Can't have a start time without a hostname
-        CheckConstraint('NOT (start_time IS NOT NULL AND hostname IS NULL)',
-                        name='job_start_without_hostname_check'),
+        CheckConstraint('NOT (start_time IS NOT NULL AND assigned_worker IS NULL)',
+                        name='job_start_without_worker_check'),
         # Can't have a start time without a expire time
         CheckConstraint('NOT (start_time IS NOT NULL AND expires IS NULL)',
                         name='job_start_without_expire_check'),

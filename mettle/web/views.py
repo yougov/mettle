@@ -42,7 +42,7 @@ class Counter(View):
     Open up lots of terminals with that command to test how many simultaneous
     connections you can handle.
     """
-    def GET(self):
+    def get(self):
         return Response(CountIter())
 
 
@@ -65,7 +65,7 @@ class StreamMessages(View):
         channel = connection.channel()
         exchanges = [
             mp.ANNOUNCE_PIPELINE_RUN_EXCHANGE,
-            mp.ACK_PIPELINE_RUN_EXCHANGE,
+            mp.CLAIM_PIPELINE_RUN_EXCHANGE,
             mp.ANNOUNCE_JOB_EXCHANGE,
             mp.ACK_JOB_EXCHANGE,
             mp.END_JOB_EXCHANGE,

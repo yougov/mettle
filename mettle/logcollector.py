@@ -52,9 +52,10 @@ def main():
             existing_line = db.query(JobLogLine).filter_by(job_id=job_id,
                                                            line_num=line_num).one()
             if existing_line.message != message:
-                err = """Job {job_id}, log line {num} is stored as {old}, but
-                      the queue has just produced a new message for the same
-                      line, with this value: {new}"""
+                err = """Job {job_id}, log line {num} is stored as
+                this:\n{old}\n\n but the queue has just produced a new message
+                for the same line, with this value:\n{new}"""
+
 
                 logger.error(textwrap.dedent(err).format(
                     job_id=job_id,

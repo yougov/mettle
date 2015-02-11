@@ -3,12 +3,12 @@ import os
 import yaml
 
 DEFAULTS = {
-    'timer_sleep_secs': 60,
+    'timer_sleep_secs': 10,
     'db_url': 'postgresql://postgres@/mettle',
     'rabbit_url': 'amqp://guest:guest@localhost:5672/%2f',
 
     # don't bother with pipeline runs older than this
-    'lookback_days': 7,
+    'lookback_days': 2,
 
     # delete logs older than this
     'max_log_days': 14,
