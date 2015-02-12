@@ -74,9 +74,8 @@ def check_pipelines(settings, db, rabbit):
         ready_targets = run.get_ready_targets(db)
         if ready_targets:
             for target in ready_targets:
+                # This job will be announced later in the check_jobs function.
                 job = run.make_job(db, target)
-                if job:
-                    lock_and_announce_job(db, rabbit, job)
         elif run.is_ended(db):
             run.end_time=now
 
@@ -152,7 +151,7 @@ def check_jobs(settings, db, rabbit):
                 email_pipeline_group(db, pipeline, subj, msg)
     db.commit()
 
-    # Handle jobs that haven't been acked.  They should be re-announced.  Any
+    # Handle jobs that haven't been acked.  They should be announced.  Any
     # expired ones have already been cleaned up by the time we get here.
     new_jobs = db.query(Job).filter(
         Job.start_time==None,

@@ -60,6 +60,23 @@ def on_job_end(settings, rabbit, db, data):
     job.end_time = isodate.parse_datetime(data['end_time'])
     job.succeeded = data['succeeded']
 
+    if job.succeeded:
+        # See if this job was a dependency for any other targets.  If so, check
+        # if they're ready to be run now.  If they are, kick them off.
+        run = job.pipeline_run
+        depending_targets = [t for t, deps in run.targets.items() if job.target
+                            in deps]
+        if depending_targets:
+            # Make sure just-completed job state is saved before we query
+            db.commit()
+            for target in depending_targets:
+                if run.target_is_ready(db, target):
+                    new_job = run.make_job(db, target)
+                    if new_job:
+                        logger.info('Job %s chained from %s' % (new_job.id,
+                                                                job.id))
+                        lock_and_announce_job(db, rabbit, new_job)
+
 
 def main():
     settings = get_settings()

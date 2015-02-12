@@ -161,21 +161,22 @@ class PipelineRun(Base):
                 return False
         return True
 
-    def get_ready_targets(self, db):
+    def target_is_ready(self, db, target):
         # Return the list of targets that meet these conditions:
-            # 1. Are not ended.
-            # 2. Do not already have an in-progress job for them in the DB.
-            # 3. If they have dependencies, there is a successful job in the DB
-            # whose target provides that dependency.
-        def is_ready(t):
-            if self.target_is_ended(db, t):
-                return False
-            if self.target_is_in_progress(db, t):
-                return False
-            if not self.target_deps_met(db, t):
-                return False
-            return True
-        return [t for t in self.targets if is_ready(t)]
+        # 1. Are not ended.
+        # 2. Do not already have an in-progress job for them in the DB.
+        # 3. If they have dependencies, there is a successful job in the DB
+        # whose target provides that dependency.
+        if self.target_is_ended(db, target):
+            return False
+        if self.target_is_in_progress(db, target):
+            return False
+        if not self.target_deps_met(db, target):
+            return False
+        return True
+
+    def get_ready_targets(self, db):
+        return [t for t in self.targets if self.target_is_ready(db, t)]
 
     def make_job(self, db, target):
         job = Job(
