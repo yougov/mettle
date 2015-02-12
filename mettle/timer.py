@@ -71,7 +71,13 @@ def check_pipelines(settings, db, rabbit):
         PipelineRun.end_time==None
     )
     for run in unended_runs:
-        if run.is_ended(db):
+        ready_targets = run.get_ready_targets(db)
+        if ready_targets:
+            for target in ready_targets:
+                job = run.make_job(db, target)
+                if job:
+                    lock_and_announce_job(db, rabbit, job)
+        elif run.is_ended(db):
             run.end_time=now
 
 
@@ -89,6 +95,7 @@ def ensure_pipeline_run(db, pipeline, target_time):
             started_by='timer',
         )
         db.add(run)
+        db.commit()
         logger.info("Created new pipeline run %s" % run.id)
 
 

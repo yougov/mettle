@@ -1,4 +1,13 @@
 BEGIN;
+CREATE TABLE services (
+	id SERIAL NOT NULL, 
+	name TEXT NOT NULL, 
+	description TEXT, 
+	updated_by TEXT NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE (name)
+);
+
 CREATE TABLE notification_lists (
 	id SERIAL NOT NULL, 
 	name TEXT NOT NULL, 
@@ -17,15 +26,6 @@ CREATE TABLE change_records (
 	"old" JSON, 
 	"new" JSON, 
 	PRIMARY KEY (id)
-);
-
-CREATE TABLE services (
-	id SERIAL NOT NULL, 
-	name TEXT NOT NULL, 
-	description TEXT, 
-	updated_by TEXT NOT NULL, 
-	PRIMARY KEY (id), 
-	UNIQUE (name)
 );
 
 CREATE TABLE pipelines (
@@ -54,7 +54,7 @@ CREATE TABLE pipeline_runs (
 	created_time TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL, 
 	started_by TEXT NOT NULL, 
 	ack_time TIMESTAMP WITH TIME ZONE, 
-	targets TEXT[], 
+	targets JSON, 
 	end_time TIMESTAMP WITH TIME ZONE, 
 	PRIMARY KEY (id), 
 	CONSTRAINT run_ack_without_targets_check CHECK (NOT (ack_time IS NOT NULL AND targets IS NULL)), 
@@ -96,6 +96,5 @@ CREATE TABLE job_log_lines (
 );
 
 CREATE UNIQUE INDEX unique_log_line ON job_log_lines (job_id, line_num);
-
 INSERT INTO migration_history (name) VALUES ('0002-initial-tables');
 COMMIT;

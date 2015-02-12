@@ -1,14 +1,3 @@
-# This component listens on rabbitmq for three kinds of messages
-# 1. pipeline run ack messages
-# 2. job ack messages
-# 3. job end messages
-
-# Upon hearing each kind of message, it will update the database and, if
-# necessary, send more job messages to push the pipeline run towards completion.
-
-# This component is designed so that it should be safe to run multiple instances
-# at the same time, without duplication of jobs.
-
 import json
 import logging
 
@@ -32,27 +21,17 @@ def on_pipeline_run_ack(settings, rabbit, db, data):
     logger.info("Pipeline run ack {service}:{pipeline}:{run_id}".format(**data))
     run = db.query(PipelineRun).filter_by(id=data['run_id']).one()
 
-    run.ack_time = utc.now()
+    if run.ack_time is None:
+        run.ack_time = utc.now()
+        run.targets = data['targets']
 
-    run.targets = data['targets_present'] + data['targets_absent']
-    missing_targets = data['targets_absent']
-    if missing_targets:
-        for target in data['targets_absent']:
-            job = db.query(Job).filter(Job.pipeline_run_id==data['run_id'],
-                                       Job.end_time==None,
-                                       Job.target==target).first()
-            if job is None:
-                job = Job(
-                    pipeline_run=run,
-                    target=target,
-                    retries_remaining=run.pipeline.retries,
-                )
-                db.add(job)
-                db.commit()
-                lock_and_announce_job(db, rabbit, job)
-    else:
-        # There are no targets to be made.  Mark the run as complete.
+    if run.is_ended(db):
         run.end_time = utc.now()
+    else:
+        for target in run.get_ready_targets(db):
+            job = run.make_job(db, target)
+            if job:
+                lock_and_announce_job(db, rabbit, job)
 
 
 def on_job_claim(settings, rabbit, db, data, corr_id):

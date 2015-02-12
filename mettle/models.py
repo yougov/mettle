@@ -1,3 +1,5 @@
+import logging
+
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import (ARRAY, JSON)
@@ -6,11 +8,18 @@ from sqlalchemy import (Column, Integer, Text, ForeignKey, DateTime, Boolean,
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.sql.expression import text
 from sqlalchemy.orm import relationship, backref, validates
+from sqlalchemy.exc import IntegrityError
 from croniter import croniter
 import utc
 
+import mettle_protocol as mp
+
 
 Base = declarative_base()
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class Service(Base):
@@ -110,7 +119,7 @@ class PipelineRun(Base):
 
     # These fields are set when we get an ack from the ETL service
     ack_time = Column(DateTime(timezone=True))
-    targets = Column(ARRAY(Text), default=[])
+    targets = Column(MutableDict.as_mutable(JSON), default={})
 
     # end_time is set by dispatcher after it has heard in from all job runs
     end_time = Column(DateTime(timezone=True))
@@ -123,23 +132,65 @@ class PipelineRun(Base):
             return False
         return all(self.target_is_ended(db, t) for t in self.targets)
 
-    def target_is_ended(self, db, target):
-        # A target is ended if we have either:
-            # 1. A successful job in this pipeline run for that target
-            # 2. The count of failed jobs for that target, in this run, is greater
-            # than or equal to pipeline.retries.
-        succeeded = db.query(Job).filter(Job.pipeline_run==self,
-                                         Job.succeeded==True).first()
-        if succeeded:
-            return True
+    def target_is_succeeded(self, db, target):
+        job = db.query(Job).filter(Job.pipeline_run==self,
+                                   Job.target==target,
+                                   Job.succeeded==True).first()
+        return job is not None
 
+    def target_is_failed(self, db, target):
         failure_count = db.query(Job).filter(Job.pipeline_run==self,
                                              Job.target==target,
                                              Job.end_time!=None,
                                              Job.succeeded==False).count()
-        if failure_count >= self.pipeline.retries:
+        return failure_count >= self.pipeline.retries
+
+    def target_is_ended(self, db, target):
+        return (self.target_is_succeeded(db, target) or
+                self.target_is_failed(db, target))
+
+    def target_is_in_progress(self, db, target):
+        job = db.query(Job).filter(Job.pipeline_run==self,
+                                   Job.target==target,
+                                   Job.end_time==None).first()
+        return job is not None
+
+    def target_deps_met(self, db, target):
+        for dep in self.targets[target]:
+            if not self.target_is_succeeded(db, dep):
+                return False
+        return True
+
+    def get_ready_targets(self, db):
+        # Return the list of targets that meet these conditions:
+            # 1. Are not ended.
+            # 2. Do not already have an in-progress job for them in the DB.
+            # 3. If they have dependencies, there is a successful job in the DB
+            # whose target provides that dependency.
+        def is_ready(t):
+            if self.target_is_ended(db, t):
+                return False
+            if self.target_is_in_progress(db, t):
+                return False
+            if not self.target_deps_met(db, t):
+                return False
             return True
-        return False
+        return [t for t in self.targets if is_ready(t)]
+
+    def make_job(self, db, target):
+        job = Job(
+            pipeline_run=self,
+            target=target,
+            retries_remaining=self.pipeline.retries,
+        )
+        db.add(job)
+        db.commit()
+        return job
+
+    @validates('targets')
+    def validate_targets(self, key, targets):
+        mp.validate_targets_graph(targets)
+        return targets
 
     __table_args__ = (
         Index('unique_run_in_progress', pipeline_id, target_time,

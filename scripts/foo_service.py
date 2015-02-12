@@ -5,6 +5,7 @@ import os
 import json
 import socket
 import time
+import random
 from datetime import timedelta
 
 import pika
@@ -18,18 +19,30 @@ import mettle_protocol as mp
 class BarPipeline(mp.Pipeline):
 
     def get_targets(self, target_time):
-        dirname = self._get_dir(target_time)
-        targets = [str(x) for x in xrange(1, 11)]
-        present = []
-        absent = []
-        for t in targets:
-            if self._target_exists(target_time, t):
-                present.append(t)
-            else:
-                absent.append(t)
+        # The get_targets function must return a dictionary where all the keys
+        # are strings representing the targets to be created, and the values are
+        # lists of targets on which a target depends.
+
+        # In this example, we're making 11 targets.  Ten of them are just single
+        # number strings, none of which has any dependencies.  The last one is
+        # called 'manifest', and has a dependency on all the other ten.
+
+        # Rules:
+            # - all targets must be strings
+            # - any dependency listed must itself be a target in the dict
+            # - cyclic dependencies are not allowed
         return {
-            'present': present,
-            'absent': absent,
+            '1': [],
+            '2': [],
+            '3': [],
+            '4': [],
+            '5': [],
+            '6': [],
+            '7': [],
+            '8': [],
+            '9': [],
+            '10': [],
+            'manifest': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
         }
 
     def get_expire_time(self, target_time, target, start_time):
@@ -47,16 +60,22 @@ class BarPipeline(mp.Pipeline):
                 self.log("%s already exists." % target)
             else:
                 self.log("%s does not exist.  Creating." % target)
+
+                # Let's just randomly fail 10% of the time.
+                if random.random() < .1:
+                    raise Exception("No one expects the Spanish Inquisition!")
                 filename = self._target_to_filename(target_time, target)
                 dirname = os.path.dirname(filename)
                 if not os.path.isdir(dirname):
                     os.makedirs(dirname)
                 with open(filename, 'w') as f:
-                    # This pipeline just uses a simple int as the target.
-                    for x in xrange(int(target)):
-                        f.write('%s\n' % x)
-                        self.log('Wrote %s' % x)
-                        time.sleep(1)
+                    if target.isdigit():
+                        for x in xrange(int(target)):
+                            f.write('%s\n' % x)
+                            self.log('Wrote %s' % x)
+                            time.sleep(1)
+                    else:
+                        f.write('all done!')
             return True
         except Exception as e:
             self.log("Error making target %s: %s" % (target, e))
