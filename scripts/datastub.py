@@ -77,6 +77,7 @@ def main():
         nl.recipients = nl_data['recipients']
         nl_lists[nl.name] = nl
 
+    pipelines = []
     for pl_data in settings.stub_pipelines:
         pipeline = session.query(Pipeline).filter_by(
             name=pl_data['name'],
@@ -93,6 +94,14 @@ def main():
             session.add(pipeline)
         pipeline.crontab = pl_data['crontab']
         pipeline.notification_list = nl_lists[pl_data['notification_list']]
+        pipelines.append(pl_data['name'])
+
+    # query for all pipelines.  any not in the data stub should be made
+    # inactive.
+    for pipeline in session.query(Pipeline):
+        if pipeline.name not in pipelines:
+            logger.info('Deactivating unstubbed pipeline "%s".' % pipeline.name)
+            pipeline.active = False
 
     session.commit()
 
