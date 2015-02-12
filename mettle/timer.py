@@ -9,7 +9,7 @@ from mettle_protocol import declare_exchanges, announce_pipeline_run
 
 from mettle.models import Pipeline, PipelineRun, Job, JobLogLine
 from mettle.settings import get_settings
-from mettle.db import make_session_cls, parse_pgurl
+from mettle.db import make_session_cls
 from mettle.lock import lock_and_announce_run, lock_and_announce_job
 from mettle.email import email_pipeline_group
 

@@ -37,7 +37,7 @@ import sys
 
 from mettle.models import Service, Pipeline, NotificationList
 from mettle.settings import get_settings
-from mettle.db import make_session_cls, parse_pgurl
+from mettle.db import make_session_cls
 
 logging.basicConfig()
 logger = logging.getLogger()

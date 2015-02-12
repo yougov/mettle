@@ -5,6 +5,7 @@ import os
 from gunicorn.app.base import Application
 from gunicorn import util
 from mettle.settings import get_settings
+from mettle import migrations
 
 
 logging.basicConfig()
@@ -13,10 +14,12 @@ def main():
     parser = argparse.ArgumentParser()
 
     commands = {
-        'web': run_web,
         'dispatcher': run_dispatcher,
-        'timer': run_timer,
         'logcollector': run_logcollector,
+        'migrate': migrations.run,
+        'migrate_and_sleep': migrations.run_and_sleep,
+        'timer': run_timer,
+        'web': run_web,
     }
 
     cmd_help = "one of: %s" % ', '.join(sorted(commands.keys()))
