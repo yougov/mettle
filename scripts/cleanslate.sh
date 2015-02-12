@@ -29,7 +29,3 @@ scripts/rabbitmqadmin delete exchange name=mettle_job_logs
 scripts/rabbitmqadmin delete queue name=etl_service_foo
 scripts/rabbitmqadmin delete queue name=mettle_dispatcher
 scripts/rabbitmqadmin delete queue name=mettle_job_logs
-
-# populate new fake data.
-python scripts/fakedata.py
-
