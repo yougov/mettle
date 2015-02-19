@@ -1,2 +1,2 @@
 port: 8000
-concurrency: migrate=0,dispatcher=1,logcollector=1,timer=1,web=1,service_foo=2,datastub=1
+concurrency: migrate=0,dispatcher=1,logcollector=1,timer=1,web=1,service_foo=4,datastub=1

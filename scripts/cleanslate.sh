@@ -10,9 +10,9 @@ psql -U postgres -c "create database mettle"
 
 mettle migrate
 
-# Clean out anything in ./tmp/*.
+# Clean out anything in ./tmp/foo/*.
 if [ -d tmp ]; then
-    rm -rf tmp/*
+    rm -rf tmp/foo/*
 fi
 
 # Delete Rabbit exchanges.

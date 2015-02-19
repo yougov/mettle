@@ -1,4 +1,5 @@
 import logging
+import textwrap
 import time
 from datetime import datetime, timedelta
 
@@ -78,6 +79,8 @@ def check_pipelines(settings, db, rabbit):
                 job = run.make_job(db, target)
         elif run.is_ended(db):
             run.end_time=now
+            if run.all_targets_succeeded(db):
+                run.succeeded = True
 
 
 def ensure_pipeline_run(db, pipeline, target_time):
@@ -117,29 +120,34 @@ def check_jobs(settings, db, rabbit):
         if recent_log_lines_count:
             pipeline = job.pipeline_run.pipeline
             subj = "Job %s running past expire time." % job.target
-            msg = """Job {target_time} {target}, from pipeline {pipeline} has
+            msg = textwrap.dedent("""Job {target_time} {target}, from pipeline {pipeline} has
             passed its expire time, but is still emitting log output.  Will let
             it continue.  Please consider modifiying the service to provide a
             more accurate expiration time.""".format(
                 target_time=job.pipeline_run.target_time.isoformat(),
                 target=job.target,
                 pipeline=pipeline.name,
-            )
+            ))
             email_pipeline_group(db, pipeline, subj, msg)
         else:
             # This expired job is no longer doing stuff.  As far as we can tell.
             job.end_time = now
-            if job.retries_remaining > 0:
-                # Make a new job, with decremented retries field.
+
+            # See if we have run out of retries
+            pipeline = job.pipeline_run.pipeline
+            attempts_count = db.query(Job).filter_by(
+                pipeline_run=job.pipeline_run,
+                target=job.target).count()
+
+            if attempts_count < pipeline.retries:
+                # Make a new job
                 new_job = Job(
                     pipeline_run=job.pipeline_run,
                     target=job.target,
-                    retries_remaining=job.retries_remaining - 1,
                 )
                 db.add(new_job)
             else:
                 # No more retries.  Send a failure notification
-                pipeline = job.pipeline_run.pipeline
                 subj = "Job %s out of retries" % job.target
                 msg = """Job {target_time} {target}, from pipeline {pipeline} has
                 passed its expire time, is no longer emitting log output, and

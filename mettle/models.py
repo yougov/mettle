@@ -115,6 +115,8 @@ class PipelineRun(Base):
     target_time = Column(DateTime(timezone=True), nullable=False)
     created_time = Column(DateTime(timezone=True), nullable=False,
                   server_default=func.now())
+    succeeded = Column(Boolean, nullable=False, default=False,
+                       server_default=text('false'))
     started_by = Column(Text, nullable=False) # username or 'timer'
 
     # These fields are set when we get an ack from the ETL service
@@ -131,6 +133,9 @@ class PipelineRun(Base):
         if self.ack_time is None:
             return False
         return all(self.target_is_ended(db, t) for t in self.targets)
+
+    def all_targets_succeeded(self, db):
+        return all(self.target_is_succeeded(db, t) for t in self.targets)
 
     def target_is_succeeded(self, db, target):
         job = db.query(Job).filter(Job.pipeline_run==self,
@@ -162,7 +167,7 @@ class PipelineRun(Base):
         return True
 
     def target_is_ready(self, db, target):
-        # Return the list of targets that meet these conditions:
+        # Return true if the target meets these conditions:
         # 1. Are not ended.
         # 2. Do not already have an in-progress job for them in the DB.
         # 3. If they have dependencies, there is a successful job in the DB
@@ -182,7 +187,6 @@ class PipelineRun(Base):
         job = Job(
             pipeline_run=self,
             target=target,
-            retries_remaining=self.pipeline.retries,
         )
         db.add(job)
         db.commit()
@@ -215,7 +219,6 @@ class Job(Base):
     target = Column(Text, nullable=False)
     succeeded = Column(Boolean, nullable=False, default=False,
                        server_default=text('false'))
-    retries_remaining = Column(Integer, nullable=False)
     created_time = Column(DateTime(timezone=True), nullable=False,
                   server_default=func.now())
 

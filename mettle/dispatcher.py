@@ -27,6 +27,8 @@ def on_pipeline_run_ack(settings, rabbit, db, data):
 
     if run.is_ended(db):
         run.end_time = utc.now()
+        if run.all_targets_succeeded(db):
+            run.succeeded = True
     else:
         for target in run.get_ready_targets(db):
             job = run.make_job(db, target)
@@ -56,14 +58,15 @@ def on_job_claim(settings, rabbit, db, data, corr_id):
 
 def on_job_end(settings, rabbit, db, data):
     logger.info("Job end {service}:{pipeline}:{job_id}".format(**data))
+    end_time = isodate.parse_datetime(data['end_time'])
     job = db.query(Job).filter_by(id=data['job_id']).one()
-    job.end_time = isodate.parse_datetime(data['end_time'])
+    job.end_time = end_time
     job.succeeded = data['succeeded']
+    run = job.pipeline_run
 
     if job.succeeded:
         # See if this job was a dependency for any other targets.  If so, check
         # if they're ready to be run now.  If they are, kick them off.
-        run = job.pipeline_run
         depending_targets = [t for t, deps in run.targets.items() if job.target
                             in deps]
         if depending_targets:
@@ -76,6 +79,11 @@ def on_job_end(settings, rabbit, db, data):
                         logger.info('Job %s chained from %s' % (new_job.id,
                                                                 job.id))
                         lock_and_announce_job(db, rabbit, new_job)
+
+    if run.end_time is None and run.is_ended(db):
+        run.end_time = end_time
+        if run.all_targets_succeeded(db):
+            run.succeeded = True
 
 
 def main():

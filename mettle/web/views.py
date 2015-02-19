@@ -116,8 +116,6 @@ class Log(View):
             mp.mq_escape(target) if target else '*',
             '*'
         ])
-        # Make a rabbit connection, bound to all the exchanges.  Exclusive and
-        # nameless.
         settings = self.app.settings
         connection = pika.BlockingConnection(pika.URLParameters(settings.rabbit_url))
         channel = connection.channel()
