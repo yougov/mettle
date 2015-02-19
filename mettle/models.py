@@ -168,10 +168,10 @@ class PipelineRun(Base):
 
     def target_is_ready(self, db, target):
         # Return true if the target meets these conditions:
-        # 1. Are not ended.
-        # 2. Do not already have an in-progress job for them in the DB.
-        # 3. If they have dependencies, there is a successful job in the DB
-        # whose target provides that dependency.
+        # 1. Is not ended.
+        # 2. Does not already have an in-progress job in the DB.
+        # 3. If it has dependencies, there is a successful job in the DB whose
+        # target provides that dependency.
         if self.target_is_ended(db, target):
             return False
         if self.target_is_in_progress(db, target):
