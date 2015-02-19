@@ -11,8 +11,8 @@ from datetime import timedelta
 import pika
 import isodate
 import utc
+import yaml
 
-from mettle_protocol.settings import get_settings
 import mettle_protocol as mp
 
 
@@ -95,11 +95,14 @@ class BarPipeline(mp.Pipeline):
 
 
 def main():
-    settings = get_settings()
+    with open(os.environ['APP_SETTINGS_YAML'], 'rb') as f:
+        settings = yaml.safe_load(f)
+    rabbit_url = settings.get('rabbit_url',
+                              'amqp://guest:guest@localhost:5672/%2f')
     pipelines = {
         'bar': BarPipeline,
     }
-    mp.run_pipelines('foo', settings.rabbit_url, pipelines)
+    mp.run_pipelines('foo', rabbit_url, pipelines)
 
 if __name__ == '__main__':
     main()
