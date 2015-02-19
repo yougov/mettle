@@ -266,6 +266,24 @@ class JobLogLine(Base):
         Index('unique_log_line', 'job_id', 'line_num', unique=True),
     )
 
+    def as_dict(self):
+        # This must match the structure of the messages coming over rabbitmq.
+        job = self.job
+        run = job.pipeline_run
+        pipeline = run.pipeline
+        service = pipeline.service
+        return {
+            'service': service.name,
+            'pipeline': pipeline.name,
+            'run_id': run.id,
+            'job_id': job.id,
+            'line_num': self.line_num,
+            'msg': self.message,
+        }
+
+    def __repr__(self):
+        return "%s - %s: %s" % (self.job_id, self.line_num, self.message)
+
 
 # This table is populated by triggers on services, pipelines, and
 # notification_lists

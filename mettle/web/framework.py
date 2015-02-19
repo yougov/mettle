@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import json
+
 import gevent
 from werkzeug.routing import Map, Rule
 from werkzeug.wrappers import BaseRequest, BaseResponse
@@ -14,6 +16,12 @@ class Response(BaseResponse):
     """Encapsulates a response."""
 
 
+class JSONResponse(Response):
+    def __init__(self, data, *args, **kwargs):
+        kwargs['content_type'] = 'application/json'
+        return super(JSONResponse, self).__init__(json.dumps(data), *args, **kwargs)
+
+
 class View(object):
     """Baseclass for our views."""
 
@@ -21,8 +29,9 @@ class View(object):
 
     def __init__(self, app, req, params):
         self.app = app
-        self.req = req
+        self.request = req
         self.params = params
+        self.db = self.app.db # convenience
 
     def get(self):
         raise MethodNotAllowed()
@@ -32,14 +41,16 @@ class View(object):
         return self.GET()
 
     def __call__(self, environ, start_response):
-        if self.req.method not in self.allowed_methods:
+        if self.request.method not in self.allowed_methods:
             raise NotImplemented()
 
-        if self.req.method == 'GET' and 'wsgi.websocket' in environ:
-            return self.websocket(environ['wsgi.websocket'], **self.params)
-
-        resp = getattr(self, self.req.method.lower())(**self.params)
-        return resp(environ, start_response)
+        if self.request.method == 'GET' and 'wsgi.websocket' in environ:
+            self.ws = environ['wsgi.websocket']
+            self.websocket(**self.params)
+        else:
+            handler = getattr(self, self.request.method.lower())
+            resp = handler(**self.params)
+            return resp(environ, start_response)
 
 
 class App(object):
@@ -63,14 +74,3 @@ class App(object):
         except HTTPException, e:
             resp = e
         return resp(environ, start_response)
-
-
-# gevent.pywsgi logging patch adapted from flask-sockets
-def log_request(self):
-    log = self.server.log
-    if log:
-        if hasattr(log, 'info'):
-            log.info(self.format_request() + '\n')
-        else:
-            log.write(self.format_request() + '\n')
-gevent.pywsgi.WSGIHandler.log_request = log_request

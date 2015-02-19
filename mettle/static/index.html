@@ -6,11 +6,20 @@
   <title></title>
   
 <script type="text/javascript" charset="utf-8">
- var exampleSocket = new WebSocket("ws://localhost:8000/messages/");
+ var exampleSocket = new WebSocket("ws://localhost:8000/api/services/foo/pipelines/bar/runs/1/logs/");
+ //var exampleSocket = new WebSocket("ws://localhost:8000/asdfasdf/");
 
 exampleSocket.onmessage = function (event) {
   console.log(event.data);
-}
+};
+
+exampleSocket.onerror = function (event) {
+  console.log('error');
+};
+
+exampleSocket.onclose = function (event) {
+  console.log('close');
+};
 </script>
 </head>
 <body>

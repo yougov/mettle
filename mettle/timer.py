@@ -149,7 +149,6 @@ def check_jobs(settings, db, rabbit):
                     pipeline=pipeline.name,
                 )
                 email_pipeline_group(db, pipeline, subj, msg)
-    db.commit()
 
     # Handle jobs that haven't been acked.  They should be announced.  Any
     # expired ones have already been cleaned up by the time we get here.
@@ -157,6 +156,7 @@ def check_jobs(settings, db, rabbit):
         Job.start_time==None,
     )
 
+    db.commit()
     for job in new_jobs:
         lock_and_announce_job(db, rabbit, job)
 
