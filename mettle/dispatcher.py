@@ -93,8 +93,8 @@ def main():
     rabbit = rabbit_conn.channel()
     mp.declare_exchanges(rabbit)
     queue_name = 'mettle_dispatcher'
-    queue = rabbit.queue_declare(queue=queue_name, exclusive=False,
-                                 durable=True)
+    rabbit.queue_declare(queue=queue_name, exclusive=False,
+                         durable=True)
     rabbit.queue_bind(exchange=mp.ACK_PIPELINE_RUN_EXCHANGE,
                       queue=queue_name, routing_key='#')
     rabbit.queue_bind(exchange=mp.CLAIM_JOB_EXCHANGE,

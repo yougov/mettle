@@ -7,7 +7,6 @@ from sqlalchemy.exc import IntegrityError
 
 from mettle.settings import get_settings
 from mettle.models import JobLogLine
-from mettle.lock import lock_and_announce_job
 from mettle.db import make_session_cls
 import mettle_protocol as mp
 
@@ -21,8 +20,8 @@ def main():
     rabbit = rabbit_conn.channel()
     mp.declare_exchanges(rabbit)
     queue_name = 'mettle_job_logs'
-    queue = rabbit.queue_declare(queue=queue_name, exclusive=False,
-                                 durable=True)
+    rabbit.queue_declare(queue=queue_name, exclusive=False,
+                         durable=True)
     rabbit.queue_bind(exchange=mp.JOB_LOGS_EXCHANGE,
                       queue=queue_name, routing_key='#')
     logger.info('Bound exchange %s to queue %s' % (mp.JOB_LOGS_EXCHANGE,
