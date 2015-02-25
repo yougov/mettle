@@ -4,11 +4,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import (ARRAY, JSON)
 from sqlalchemy import (Column, Integer, Text, ForeignKey, DateTime, Boolean,
-                        func, CheckConstraint, and_)
+                        func, CheckConstraint)
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.sql.expression import text
 from sqlalchemy.orm import relationship, backref, validates
-from sqlalchemy.exc import IntegrityError
 from croniter import croniter
 import utc
 

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import utc
 from croniter import croniter
 import pika
-from mettle_protocol import declare_exchanges, announce_pipeline_run
+from mettle_protocol import declare_exchanges
 
 from mettle.models import Pipeline, PipelineRun, Job, JobLogLine
 from mettle.settings import get_settings
@@ -49,7 +49,7 @@ def check_pipelines(settings, db, rabbit):
             if target_time < now:
                 ensure_pipeline_run(db, pipeline, target_time)
             else:
-               break
+                break
 
     # Now announce all unacked pipeline runs, whether created by this timer or
     # by someone manually, or by the dispatcher (using a trigger off some other
@@ -59,9 +59,6 @@ def check_pipelines(settings, db, rabbit):
         PipelineRun.ack_time==None,
     )
     for run in unacked_runs:
-        pipeline = run.pipeline
-        service = pipeline.service
-        target_time = run.target_time.isoformat()
         lock_and_announce_run(db, rabbit, run)
 
     # Finally, check for any acked runs without an end_time, and see if they're
@@ -76,7 +73,7 @@ def check_pipelines(settings, db, rabbit):
         if ready_targets:
             for target in ready_targets:
                 # This job will be announced later in the check_jobs function.
-                job = run.make_job(db, target)
+                run.make_job(db, target)
         elif run.is_ended(db):
             run.end_time=now
             if run.all_targets_succeeded(db):

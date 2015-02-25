@@ -1,3 +1,5 @@
 -i http://cheese.yougov.net
 nodeenv
 -e .
+
+bumpversion>=0.5.0
