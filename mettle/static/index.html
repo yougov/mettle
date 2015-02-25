@@ -4,7 +4,8 @@
     <script src="/static/bower_components/react/react.min.js" type="text/javascript" charset="utf-8" ></script>
     <script src="http://fb.me/JSXTransformer-0.12.2.js"></script>
     <script src="/static/bower_components/lodash/lodash.min.js" type="text/javascript" charset="utf-8" ></script>
-    <script src="/static/bower_components/dagre/dist/dagre.core.min.js" type="text/javascript" charset="utf-8" ></script>
+    <script src="/static/bower_components/graphlib/dist/graphlib.core.js" type="text/javascript" charset="utf-8" ></script>
+    <script src="/static/bower_components/dagre/dist/dagre.core.js" type="text/javascript" charset="utf-8" ></script>
   </head>
   <body>
     <div id="content"></div>
@@ -29,6 +30,8 @@ var pizzaGraph = {
   "eat": ["deliver"]
 };
 
+var nodeSize = 30;
+
 var layoutGraph = function(graphData) {
 // Given a JS object where each key is a node and each value is a list of nodes
 // that that item depends on, return a Dagre graph.
@@ -40,7 +43,7 @@ var layoutGraph = function(graphData) {
     });
   g.setDefaultEdgeLabel(function() { return {}; });
   _.forOwn(graphData, function(val, key, obj) {
-      g.setNode(key, { label:key,  width: 30, height: 30 });
+      g.setNode(key, { label:key,  width: nodeSize, height: nodeSize });
   });
 
 
@@ -72,8 +75,10 @@ var PipelineGraph = React.createClass({
           return (<PipelineEdge points={offsetPoints} key={e.v + "-" + e.w} />);
         });
 
+        var width = parseInt(this.props.graph.graph().width, 10) + parseInt(this.props.extra, 10);
+        var height = parseInt(this.props.graph.graph().height, 10) + parseInt(this.props.extra, 10);
         return (
-            <svg width={this.props.graph.graph().width + this.props.extra} height={this.props.graph.graph().height + this.props.extra}>
+            <svg width={width} height={height}>
               {graphNodes}
               {graphEdges}
             </svg>
@@ -115,7 +120,7 @@ var PipelineEdge = React.createClass({
 var graph = layoutGraph(pizzaGraph);
 
 React.render(
-  <PipelineGraph graph={graph} extra="20" />,
+  <PipelineGraph graph={graph} extra={nodeSize} />,
   document.getElementById('content')
 );
 
