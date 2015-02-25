@@ -1,0 +1,22 @@
+{
+  "name": "static",
+  "version": "0.0.0",
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "dagre": "~0.7.1",
+    "lodash": "~3.3.1",
+    "react-router": "~0.12.4",
+    "react": "~0.12.2"
+  },
+  "resolutions": {
+    "lodash": "~3.3.1"
+  }
+}

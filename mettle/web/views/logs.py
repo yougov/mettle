@@ -1,68 +1,9 @@
-import logging
-import time
-import json
-
 import pika
+
 import mettle_protocol as mp
 
-from mettle.web.framework import Request, Response, JSONResponse, View
-from mettle.web.rabbit import RabbitSocketView
+from mettle.web.framework import JSONResponse, View
 from mettle.models import JobLogLine, Job, PipelineRun, Pipeline, Service
-
-logging.basicConfig()
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-class Index(View):
-    def get(self):
-        return Response('Hello World')
-
-
-class Hello(View):
-    def get(self, name):
-        return Response('Hey there ' + name + '!')
-
-
-class SleepyCounter(object):
-    """
-    An iterator that increments an integer once per second and yields a
-    newline-terminated string
-    """
-    def __init__(self):
-        self.num = 0
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        self.num += 1
-        time.sleep(1)
-        return '%s\n' % self.num
-
-
-class Counter(View):
-    """
-    A long-lived stream of incrementing integers, one line per second.
-
-    Best viewed with "curl -n localhost:8000/count/"
-
-    Open up lots of terminals with that command to test how many simultaneous
-    connections you can handle.
-    """
-    def get(self):
-        return Response(SleepyCounter())
-
-
-class SocketEcho(View):
-    def websocket(self):
-        message = self.ws.receive()
-        self.ws.send(message)
-
-
-class SocketCounter(View):
-    def websocket(self):
-        for line in SleepyCounter():
-            self.ws.send(line)
 
 
 class Log(View):
@@ -125,7 +66,7 @@ class Log(View):
 
         channel.exchange_declare(exchange=mp.JOB_LOGS_EXCHANGE, type='topic',
                                  durable=True)
-        channel.queue_bind(exchange=exchange,
+        channel.queue_bind(exchange=mp.JOB_LOGS_EXCHANGE,
                            queue=queue_name,
                            routing_key=routing_key)
 
@@ -147,16 +88,3 @@ class Log(View):
             # Deduplicate lines that we might have just fetched from the DB.
             if (parsed['job_id'], parsed['line_num']) not in already_seen:
                 self.ws.send(body)
-
-
-class StreamMessages(RabbitSocketView):
-    def websocket(self):
-        bindings = [
-            (mp.ANNOUNCE_PIPELINE_RUN_EXCHANGE, '#'),
-            (mp.ACK_PIPELINE_RUN_EXCHANGE, '#'),
-            (mp.ANNOUNCE_JOB_EXCHANGE, '#'),
-            (mp.CLAIM_JOB_EXCHANGE, '#'),
-            (mp.END_JOB_EXCHANGE, '#'),
-            (mp.JOB_LOGS_EXCHANGE, '#'),
-        ]
-        self.stream(bindings)

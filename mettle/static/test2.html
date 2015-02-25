@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title></title>
+  <script type="text/javascript" charset="utf-8" src="./lodash.min.js"></script>
+  </head>
+  <body>
+  <svg width="800" height="800" id="graph">
+  </svg>
+  <script type="text/javascript" charset="utf-8">
+function magnitude(vec1, vec2) {
+  var vec = {x: vec2.x - vec1.x, y: vec2.y - vec1.y};
+  return Math.sqrt(vec.x * vec.x + vec.y * vec.y);
+}
+
+function normalize(vec) {
+  var len = Math.sqrt(vec.x * vec.x + vec.y * vec.y);
+  return {x: vec.x / len, y: vec.y / len};
+}
+
+
+
+
+function pointsToBezier( pointsObjects ) {
+  // Adapted from http://schepers.cc/svg/path/catmullrom2bezier.js.  MIT license.
+  var crp = _.flatten(_.map(points, function(p) {return [p.x, p.y]}));
+  
+  var d = "M " + crp[0] + " " + crp[1] + " ";
+  for (var i = 0, iLen = crp.length; iLen - 2 > i; i+=2) {
+    var p = [];
+    if ( 0 == i ) {
+      p.push( {x: parseFloat(crp[ i ]), y: parseFloat(crp[ i + 1 ])} );
+      p.push( {x: parseFloat(crp[ i ]), y: parseFloat(crp[ i + 1 ])} );
+      p.push( {x: parseFloat(crp[ i + 2 ]), y: parseFloat(crp[ i + 3 ])} );
+      p.push( {x: parseFloat(crp[ i + 4 ]), y: parseFloat(crp[ i + 5 ])} );
+    } else if ( iLen - 4 == i ) {
+      p.push( {x: parseFloat(crp[ i - 2 ]), y: parseFloat(crp[ i - 1 ])} );
+      p.push( {x: parseFloat(crp[ i ]), y: parseFloat(crp[ i + 1 ])} );
+      p.push( {x: parseFloat(crp[ i + 2 ]), y: parseFloat(crp[ i + 3 ])} );
+      p.push( {x: parseFloat(crp[ i + 2 ]), y: parseFloat(crp[ i + 3 ])} );
+    } else {
+      p.push( {x: parseFloat(crp[ i - 2 ]), y: parseFloat(crp[ i - 1 ])} );
+      p.push( {x: parseFloat(crp[ i ]), y: parseFloat(crp[ i + 1 ])} );
+      p.push( {x: parseFloat(crp[ i + 2 ]), y: parseFloat(crp[ i + 3 ])} );
+      p.push( {x: parseFloat(crp[ i + 4 ]), y: parseFloat(crp[ i + 5 ])} );
+    }
+    
+    // Catmull-Rom to Cubic Bezier conversion matrix 
+    //    0       1       0       0
+    //  -1/6      1      1/6      0
+    //    0      1/6      1     -1/6
+    //    0       0       1       0
+
+    var bp = [];
+    bp.push( { x: p[1].x,  y: p[1].y } );
+    bp.push( { x: ((-p[0].x + 6*p[1].x + p[2].x) / 6), y: ((-p[0].y + 6*p[1].y + p[2].y) / 6)} );
+    bp.push( { x: ((p[1].x + 6*p[2].x - p[3].x) / 6),  y: ((p[1].y + 6*p[2].y - p[3].y) / 6) } );
+    bp.push( { x: p[2].x,  y: p[2].y } );
+
+    d += "C" + bp[1].x + "," + bp[1].y + " " + bp[2].x + "," + bp[2].y + " " + bp[3].x + "," + bp[3].y + " ";
+  }
+  return d;
+}
+
+var points = [{"x":250,"y":350},{"x":275,"y":350},{"x":325,"y":250}];
+
+var graph = document.querySelector("#graph");
+
+var p, i;
+var curve;
+var d;
+for (i = 0; i < points.length; i++) {
+  p = points[i];
+  var dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  dot.setAttribute("stroke", "red");
+  dot.setAttribute("stroke-width", "2");
+  dot.setAttribute("fill", "red");
+  dot.setAttribute("cx", p.x);
+  dot.setAttribute("cy", p.y);
+  dot.setAttribute("r", "2");
+
+  graph.appendChild(dot);
+  console.log(p);
+
+  // OK now let's draw some curves.  Baby steps.
+  // If we're on the first point, then we need to set M, and we need to use the first point 
+  // as the first control point as well.
+//  if (i==0) {
+//    d = "M " + p.x + " " + p.y + " ";
+//  }
+
+}
+
+console.log(pointsToBezier(points));
+var bez = document.createElementNS("http://www.w3.org/2000/svg", "path");
+bez.setAttribute("d", pointsToBezier(points));
+bez.setAttribute("stroke", "black");
+bez.setAttribute("stroke-width", "1");
+bez.setAttribute("fill", "transparent");
+graph.appendChild(bez);
+  </script>
+  </body>
+</html>
+

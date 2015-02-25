@@ -9,22 +9,35 @@ from werkzeug.wsgi import SharedDataMiddleware
 from sqlalchemy.orm import scoped_session
 
 from mettle.web.framework import App
-from mettle.web import views
 from mettle.settings import get_settings
 from mettle.db import make_session_cls
+from mettle.web.views import logs, examples, runs, index
 
 
 routes = [
-    ('/', 'index', views.Index),
-    ('/people/<name>/', 'hello', views.Hello),
-    ('/count/', 'count', views.Counter),
-    ('/socketcount/', 'socketcount', views.SocketCounter),
-    ('/messages/', 'messages', views.StreamMessages),
-    ('/echo/', 'echo', views.SocketEcho),
+    ('/', 'index', index.Index),
+    ('/people/<name>/', 'hello', examples.Hello),
+    ('/count/', 'count', examples.Counter),
+    ('/socketcount/', 'socketcount', examples.SocketCounter),
+    ('/messages/', 'messages', examples.StreamMessages),
+    ('/echo/', 'echo', examples.SocketEcho),
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/logs/',
-     'logs_run', views.Log),
+     'logs_run', logs.Log),
+
+    # Show all jobs in a run
+    ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/jobs/',
+     'run_jobs', runs.RunJobs),
+
+    # Show a job in a run, by job ID
+    ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/jobs/<int:job_id>/',
+     'run_job', runs.RunJob),
+
+    # Show all jobs in a run for a given target
+    ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/targets/<target>/',
+     'run_target', runs.RunJobs),
+
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/targets/<target>/logs/',
-     'logs_target', views.Log),
+     'logs_target', logs.Log),
 ]
 
 if 'app' not in globals():

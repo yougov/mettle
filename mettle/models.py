@@ -253,6 +253,22 @@ class Job(Base):
                         name='job_start_without_expire_check'),
     )
 
+    def as_dict(self):
+        stime = self.start_time.isoformat() if self.start_time else None
+        etime = self.end_time.isoformat() if self.end_time else None
+        expires = self.expires.isoformat() if self.expires else None
+        return dict(
+            id=self.id,
+            pipeline_run_id=self.pipeline_run_id,
+            target=self.target,
+            succeeded=self.succeeded,
+            created_time=self.created_time.isoformat(),
+            start_time=stime,
+            end_time=etime,
+            assigned_worker=self.assigned_worker,
+            expires=expires,
+        )
+
 
 class JobLogLine(Base):
     __tablename__ = 'job_log_lines'

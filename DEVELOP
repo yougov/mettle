@@ -6,4 +6,13 @@ SSH into it, and 'cd /vagrant/mettle'.
 
 3. mkvirtualenv mettle
 
-4. pip install -e .
+4. pip install -r dev_requirements.txt
+
+5. Install Node.js into the virtualenv:
+
+  nodeenv -p --prebuilt
+
+6. Install JS dependencies:
+
+  cd mettle/static
+  bower install
