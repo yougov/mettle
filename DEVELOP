@@ -14,8 +14,7 @@ SSH into it, and 'cd /vagrant/mettle'.
 
 6. Install JS tools into the virtualenv:
 
-  npm install -g react-tools
-  npm install -g bower
+  npm install -g react-tools bower
 
 7. Install frontend JS packages into the mettle/static/ folder:
 

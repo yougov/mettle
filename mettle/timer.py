@@ -180,7 +180,9 @@ def do_scheduled_tasks(settings):
     rabbit = rabbit_conn.channel()
     declare_exchanges(rabbit)
     check_pipelines(settings, db, rabbit)
+    db.commit()
     check_jobs(settings, db, rabbit)
+    db.commit()
     cleanup_logs(settings, db)
     db.commit()
     run_time = utc.now() - start_time

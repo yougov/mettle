@@ -1,0 +1,67 @@
+/* For some reason this won't apply itself to my React-driven elements */
+
+.succeeded {
+  fill: #0f0;
+}
+
+.failed {
+  fill: #f00;
+}
+
+.unstarted {
+  fill: #ddd;
+}
+
+.unknown {
+  fill: #C533FF;
+}
+
+.somefails {
+  -webkit-animation: fadesomefails 1s linear infinite alternate;
+  animation: fadesomefails 1s linear infinite alternate;
+}
+
+.running {
+  -webkit-animation: faderunning 1s linear infinite alternate;
+  animation: faderunning 1s linear infinite alternate;
+}
+
+keyframes faderunning {
+  from {
+    fill: #C4E8FF;
+  }
+
+  to {
+    fill: #ffffff;
+  }
+}
+
+@-webkit-keyframes faderunning {
+  from {
+    fill: #4DFFFF;
+  }
+
+  to {
+    fill: #00DEDE;
+  }
+}
+
+keyframes fadesomefails {
+  from {
+    fill: #FFCC24;
+  }
+
+  to {
+    fill: #FFFF24;
+  }
+}
+
+@-webkit-keyframes fadesomefails {
+  from {
+    fill: #FFCC24;
+  }
+
+  to {
+    fill: #FFFF24;
+  }
+}

@@ -11,7 +11,8 @@ from sqlalchemy.orm import scoped_session
 from mettle.web.framework import App
 from mettle.settings import get_settings
 from mettle.db import make_session_cls
-from mettle.web.views import logs, examples, runs, index
+from mettle.web.views import (logs, examples, services, pipelines, runs, index,
+                              state)
 
 
 routes = [
@@ -21,6 +22,22 @@ routes = [
     ('/socketcount/', 'socketcount', examples.SocketCounter),
     ('/messages/', 'messages', examples.StreamMessages),
     ('/echo/', 'echo', examples.SocketEcho),
+
+    # Updates to changes in services, pipelines, pipeline runs, and jobs.
+    ('/api/state_stream/', 'state_stream', state.StateStream),
+
+    # Show all services
+    ('/api/services/', 'list_services', services.ServiceList),
+
+    # Details for a pipeline
+    ('/api/services/<service_name>/pipelines/<pipeline_name>/',
+     'details_pipeline', pipelines.PipelineDetails),
+
+    # Details for a pipeline run
+    ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/',
+     'details_run', runs.RunDetails),
+
+    # Logs for a pipeline run.
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/logs/',
      'logs_run', logs.Log),
 

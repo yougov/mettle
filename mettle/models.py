@@ -1,5 +1,7 @@
 import logging
+from collections import OrderedDict
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import (ARRAY, JSON)
@@ -106,6 +108,19 @@ class Pipeline(Base):
     def __repr__(self):
         return 'Pipeline <%s>' % self.name
 
+    def as_dict(self):
+        return OrderedDict(
+            id=self.id,
+            name=self.name,
+            service_id=self.service_id,
+            notification_list_id=self.notification_list_id,
+            updated_by=self.updated_by,
+            active=self.active,
+            retries=self.retries,
+            crontab=self.crontab,
+            chained_from_id=self.chained_from_id,
+        )
+
 
 class PipelineRun(Base):
     __tablename__ = 'pipeline_runs'
@@ -188,7 +203,12 @@ class PipelineRun(Base):
             target=target,
         )
         db.add(job)
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError as e:
+            logger.error(str(e))
+            db.rollback()
+            return None
         return job
 
     @validates('targets')
@@ -206,6 +226,19 @@ class PipelineRun(Base):
         CheckConstraint('NOT (end_time IS NOT NULL AND ack_time IS NULL)',
                         name='run_end_without_ack_check'),
     )
+
+    def as_dict(self):
+        return OrderedDict(
+            id=self.id,
+            pipeline_id=self.pipeline_id,
+            target_time=self.target_time.isoformat(),
+            created_time=self.created_time.isoformat(),
+            succeeded=self.succeeded,
+            started_by=self.started_by,
+            ack_time=self.ack_time.isoformat() if self.ack_time else None,
+            targets=self.targets,
+            end_time=self.end_time.isoformat() if self.end_time else None,
+        )
 
 
 class Job(Base):
