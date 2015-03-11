@@ -29,11 +29,12 @@ def main():
     host = 'localhost'
     vhost = '/'
     exchanges = [
-        #mp.ANNOUNCE_PIPELINE_RUN_EXCHANGE,
-        #mp.ACK_PIPELINE_RUN_EXCHANGE,
-        #mp.ANNOUNCE_JOB_EXCHANGE,
-        #mp.ACK_JOB_EXCHANGE,
-        #mp.END_JOB_EXCHANGE,
+        mp.ANNOUNCE_SERVICE_EXCHANGE,
+        mp.ANNOUNCE_PIPELINE_RUN_EXCHANGE,
+        mp.ACK_PIPELINE_RUN_EXCHANGE,
+        mp.ANNOUNCE_JOB_EXCHANGE,
+        mp.CLAIM_JOB_EXCHANGE,
+        mp.END_JOB_EXCHANGE,
         mp.JOB_LOGS_EXCHANGE,
     ]
 
@@ -47,6 +48,8 @@ def main():
 
     connection = pika.BlockingConnection(pika.URLParameters(rabbit_url))
     channel = connection.channel()
+
+    mp.declare_exchanges(channel)
 
     queue = channel.queue_declare(exclusive=True)
     queue_name = queue.method.queue

@@ -30,6 +30,10 @@ class Service(Base):
     description = Column(Text)
     updated_by = Column(Text, nullable=False)
 
+    # TODO: once all services have this field filled in, update this to
+    # nullable=False, and create a migration to match.
+    pipeline_names = Column(ARRAY(Text))
+
     @validates('name')
     def validate_name(self, key, name):
         # Ensure that the name has no characters that have special meanings in
@@ -38,7 +42,6 @@ class Service(Base):
         assert '*' not in name
         assert '#' not in name
         return name
-
 
     __table_args__ = (
         UniqueConstraint('name'),
@@ -143,6 +146,11 @@ class PipelineRun(Base):
     pipeline = relationship("Pipeline", backref=backref('pipeline_runs',
                                                         order_by=created_time))
 
+    def get_announce_time(self):
+        if self.nacks:
+            return max(n.reannounce_time for n in self.nacks)
+        return None
+
     def is_ended(self, db):
         if self.ack_time is None:
             return False
@@ -190,9 +198,8 @@ class PipelineRun(Base):
             return False
         if self.target_is_in_progress(db, target):
             return False
-        if not self.target_deps_met(db, target):
-            return False
-        return True
+
+        return self.target_deps_met(db, target)
 
     def get_ready_targets(self, db):
         return [t for t in self.targets if self.target_is_ready(db, t)]
@@ -239,6 +246,23 @@ class PipelineRun(Base):
             targets=self.targets,
             end_time=self.end_time.isoformat() if self.end_time else None,
         )
+
+
+class PipelineRunNack(Base):
+    __tablename__ = 'pipeline_runs_nacks'
+    id = Column(Integer, primary_key=True)
+    pipeline_run_id = Column(Integer, ForeignKey('pipeline_runs.id'),
+                             nullable=False)
+    created_time = Column(DateTime(timezone=True), nullable=False,
+                  server_default=func.now())
+    message = Column(Text, nullable=False)
+
+    # If a nack message specifies that a run should not be reannounced, this
+    # column will be left null.
+    reannounce_time = Column(DateTime(timezone=True))
+
+    pipeline_run = relationship("PipelineRun", backref=backref('nacks',
+                                                               order_by=created_time))
 
 
 class Job(Base):

@@ -8,7 +8,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm.exc import NoResultFound
 
 from mettle.settings import get_settings
-from mettle.models import PipelineRun, Job
+from mettle.models import Service, Pipeline, PipelineRun, PipelineRunNack, Job
 from mettle.lock import lock_and_announce_job
 from mettle.db import make_session_cls
 import mettle_protocol as mp
@@ -16,6 +16,27 @@ import mettle_protocol as mp
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+def on_announce_service(settings, db, data):
+    logger.info("Service announced: {service}".format(**data))
+    try:
+        service = db.query(Service).filter_by(name=data['service']).one()
+    except NoResultFound:
+        service = Service(
+            name=data['service'],
+            updated_by='dispatcher',
+        )
+        db.add(service)
+
+    service.pipeline_names = data['pipeline_names']
+
+    # now disable any pipelines linked to this service that weren't included in
+    # this announcement.  We don't do the inverse though... Once deactivated, a
+    # pipeline must be manually re-activated in the UI.
+    for p in service.pipelines:
+        if p.name not in service.pipeline_names:
+            p.active = False
+
 
 def on_pipeline_run_ack(settings, rabbit, db, data):
     logger.info("Pipeline run ack {service}:{pipeline}:{run_id}".format(**data))
@@ -34,6 +55,25 @@ def on_pipeline_run_ack(settings, rabbit, db, data):
             job = run.make_job(db, target)
             if job:
                 lock_and_announce_job(db, rabbit, job)
+
+
+def on_pipeline_run_nack(settings, rabbit, db, data):
+    logger.info("Pipeline run nack {service}:{pipeline}:{run_id}".format(**data))
+    run = db.query(PipelineRun).filter_by(id=data['run_id']).one()
+
+    # create a new nack record.
+    if data['reannounce_time'] is None:
+        rtime = None
+        # If reannounce_time is None, then give up on this pipeline run.
+        run.end_time = utc.now()
+    else:
+        rtime = isodate.parse_datetime(data['reannounce_time'])
+
+    db.add(PipelineRunNack(
+        pipeline_run=run,
+        message=data['message'],
+        reannounce_time=rtime,
+    ))
 
 
 def on_job_claim(settings, rabbit, db, data, corr_id):
@@ -93,9 +133,15 @@ def main():
     rabbit = rabbit_conn.channel()
     mp.declare_exchanges(rabbit)
     queue_name = 'mettle_dispatcher'
+
+
     rabbit.queue_declare(queue=queue_name, exclusive=False,
                          durable=True)
+    rabbit.queue_bind(exchange=mp.ANNOUNCE_SERVICE_EXCHANGE,
+                      queue=queue_name, routing_key='#')
     rabbit.queue_bind(exchange=mp.ACK_PIPELINE_RUN_EXCHANGE,
+                      queue=queue_name, routing_key='#')
+    rabbit.queue_bind(exchange=mp.NACK_PIPELINE_RUN_EXCHANGE,
                       queue=queue_name, routing_key='#')
     rabbit.queue_bind(exchange=mp.CLAIM_JOB_EXCHANGE,
                       queue=queue_name, routing_key='#')
@@ -105,8 +151,12 @@ def main():
     Session = make_session_cls(settings.db_url)
     for method, properties, body in rabbit.consume(queue=queue_name):
         db = Session()
-        if method.exchange == mp.ACK_PIPELINE_RUN_EXCHANGE:
+        if method.exchange == mp.ANNOUNCE_SERVICE_EXCHANGE:
+            on_announce_service(settings, db, json.loads(body))
+        elif method.exchange == mp.ACK_PIPELINE_RUN_EXCHANGE:
             on_pipeline_run_ack(settings, rabbit, db, json.loads(body))
+        elif method.exchange == mp.NACK_PIPELINE_RUN_EXCHANGE:
+            on_pipeline_run_nack(settings, rabbit, db, json.loads(body))
         elif method.exchange == mp.CLAIM_JOB_EXCHANGE:
             on_job_claim(settings, rabbit, db, json.loads(body),
                          properties.correlation_id)

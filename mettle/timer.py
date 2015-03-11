@@ -57,9 +57,17 @@ def check_pipelines(settings, db, rabbit):
     unacked_runs = db.query(PipelineRun).filter(
         PipelineRun.created_time>start,
         PipelineRun.ack_time==None,
+        PipelineRun.end_time==None,
     )
     for run in unacked_runs:
-        lock_and_announce_run(db, rabbit, run)
+        # If run has previously been nacked, and we haven't reached the
+        # reannounce time, then don't announce yet.
+        announce_time = run.get_announce_time()
+        if announce_time is None or announce_time < now:
+            lock_and_announce_run(db, rabbit, run)
+        else:
+            logger.info("Skipping announcement for run %s until %s" % (run.id,
+                                                                       announce_time))
 
     # Finally, check for any acked runs without an end_time, and see if they're
     # actually finished.
