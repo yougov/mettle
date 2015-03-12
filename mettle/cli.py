@@ -19,6 +19,7 @@ def main():
         'migrate': migrations.run,
         'migrate_and_sleep': migrations.run_and_sleep,
         'timer': run_timer,
+        'publisher': run_publisher,
         'web': run_web,
     }
 
@@ -76,3 +77,8 @@ def run_timer():
 def run_logcollector():
     from mettle import logcollector
     logcollector.main()
+
+
+def run_publisher():
+    from mettle import publisher
+    publisher.main()

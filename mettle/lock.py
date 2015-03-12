@@ -46,16 +46,27 @@ def lock_and_announce_job(db, rabbit, job):
     db.commit()
     try:
         with db.begin(subtransactions=True):
-            logger.info('DEBUG: announcing job %s' % job.id)
             db.query(Job).filter(
                 Job.id==job.id,
                 Job.start_time==None
             ).with_lockmode('update_nowait').one()
             run = job.pipeline_run
             pipeline = run.pipeline
-            mp.announce_job(rabbit, pipeline.service.name, pipeline.name,
-                            run.target_time.isoformat(), job.target,
-                            job.pipeline_run.id, job.id)
+
+            service_name = pipeline.service.name
+            queue_name = job.target_parameters.get('queue',
+                                                   mp.service_queue_name(service_name))
+            mp.queue_job(
+                rabbit,
+                queue_name,
+                service_name,
+                pipeline.name,
+                run.target_time.isoformat(),
+                job.target,
+                job.target_parameters,
+                job.pipeline_run.id,
+                job.id
+            )
 
         # One would think that the "with db.begin()" context manager would
         # make this commit unnecessary, but testing shows that the row lock

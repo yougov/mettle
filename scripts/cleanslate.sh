@@ -12,7 +12,8 @@ mettle migrate
 
 # Clean out anything in ./tmp/foo/*.
 if [ -d tmp ]; then
-    rm -rf tmp/foo/*
+    rm -rf tmp/HawaiianPipeline/*
+    rm -rf tmp/PepperoniPipeline/*
 fi
 
 # Delete Rabbit exchanges.
@@ -20,10 +21,10 @@ scripts/rabbitmqadmin delete exchange name=mettle_announce_service
 scripts/rabbitmqadmin delete exchange name=mettle_announce_pipeline_run
 scripts/rabbitmqadmin delete exchange name=mettle_ack_pipeline_run
 scripts/rabbitmqadmin delete exchange name=mettle_nack_pipeline_run
-scripts/rabbitmqadmin delete exchange name=mettle_announce_job
 scripts/rabbitmqadmin delete exchange name=mettle_claim_job
 scripts/rabbitmqadmin delete exchange name=mettle_end_job
 scripts/rabbitmqadmin delete exchange name=mettle_job_logs
+scripts/rabbitmqadmin delete exchange name=mettle_state
 
 # Delete Rabbit queues.
 scripts/rabbitmqadmin delete queue name=etl_service_pizza

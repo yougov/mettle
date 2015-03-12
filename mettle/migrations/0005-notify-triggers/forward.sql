@@ -9,9 +9,8 @@ BEGIN
   IF octet_length( payload ) > 8000 THEN
     -- this won't work in a pg_notify
     payload := ('{"id": "' || NEW.id || '", "error": "too long", "tablename": "services"}')::json::text;
-  ELSE
-    PERFORM pg_notify( 'mettle_state'::text, payload );
   END IF;
+  PERFORM pg_notify( 'mettle_state'::text, payload );
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -28,9 +27,8 @@ BEGIN
   IF octet_length( payload ) > 8000 THEN
     -- this won't work in a pg_notify
     payload := ('{"id": "' || NEW.id || '", "error": "too long", "tablename": "pipelines"}')::json::text;
-  ELSE
-    PERFORM pg_notify( 'mettle_state'::text, payload );
   END IF;
+  PERFORM pg_notify( 'mettle_state'::text, payload );
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -47,9 +45,8 @@ BEGIN
   IF octet_length( payload ) > 8000 THEN
     -- this won't work in a pg_notify
     payload := ('{"id": "' || NEW.id || '", "error": "too long", "tablename": "pipeline_runs"}')::json::text;
-  ELSE
-    PERFORM pg_notify( 'mettle_state'::text, payload );
   END IF;
+  PERFORM pg_notify( 'mettle_state'::text, payload );
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -66,9 +63,8 @@ BEGIN
   IF octet_length( payload ) > 8000 THEN
     -- this won't work in a pg_notify
     payload := ('{"id": "' || NEW.id || '", "error": "too long", "tablename": "jobs"}')::json::text;
-  ELSE
-    PERFORM pg_notify( 'mettle_state'::text, payload );
   END IF;
+  PERFORM pg_notify( 'mettle_state'::text, payload );
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

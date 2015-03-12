@@ -1,2 +1,2 @@
 port: 8000
-concurrency: migrate=0,dispatcher=1,logcollector=1,timer=1,service_pizza=1,datastub=1
+concurrency: migrate=0,dispatcher=1,logcollector=1,timer=1,publisher=1,service_pizza=1,service_pizza_cheese=1,datastub=1

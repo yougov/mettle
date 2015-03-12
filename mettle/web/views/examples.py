@@ -58,7 +58,6 @@ class StreamMessages(RabbitSocketView):
         bindings = [
             (mp.ANNOUNCE_PIPELINE_RUN_EXCHANGE, '#'),
             (mp.ACK_PIPELINE_RUN_EXCHANGE, '#'),
-            (mp.ANNOUNCE_JOB_EXCHANGE, '#'),
             (mp.CLAIM_JOB_EXCHANGE, '#'),
             (mp.END_JOB_EXCHANGE, '#'),
             (mp.JOB_LOGS_EXCHANGE, '#'),

@@ -5,7 +5,7 @@ import utc
 import pika
 import isodate
 from sqlalchemy.exc import OperationalError
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from mettle.settings import get_settings
 from mettle.models import Service, Pipeline, PipelineRun, PipelineRunNack, Job
@@ -45,11 +45,13 @@ def on_pipeline_run_ack(settings, rabbit, db, data):
     if run.ack_time is None:
         run.ack_time = utc.now()
         run.targets = data['targets']
+        run.target_parameters = data['target_parameters']
 
     if run.is_ended(db):
-        run.end_time = utc.now()
-        if run.all_targets_succeeded(db):
-            run.succeeded = True
+        if run.end_time is None:
+            run.end_time = utc.now()
+            if run.all_targets_succeeded(db):
+                run.succeeded = True
     else:
         for target in run.get_ready_targets(db):
             job = run.make_job(db, target)
@@ -77,8 +79,6 @@ def on_pipeline_run_nack(settings, rabbit, db, data):
 
 
 def on_job_claim(settings, rabbit, db, data, corr_id):
-    logger.info("Job claim %s:%s:%s" % (data['job_id'], data['worker_name'],
-                                        corr_id))
     try:
         job = db.query(Job).filter_by(
             id=data['job_id'],
@@ -87,6 +87,12 @@ def on_job_claim(settings, rabbit, db, data, corr_id):
         job.start_time = isodate.parse_datetime(data['start_time'])
         job.expires = isodate.parse_datetime(data['expires'])
         job.assigned_worker = data['worker_name']
+        logger.info("Job claim %s:%s:%s:%s" % (
+            job.pipeline_run_id,
+            job.target,
+            job.id,
+            job.assigned_worker,
+        ))
         db.commit()
         mp.grant_job(rabbit, data['worker_name'], corr_id, True)
     except (OperationalError, NoResultFound):

@@ -29,13 +29,13 @@ def main():
     host = 'localhost'
     vhost = '/'
     exchanges = [
-        mp.ANNOUNCE_SERVICE_EXCHANGE,
-        mp.ANNOUNCE_PIPELINE_RUN_EXCHANGE,
-        mp.ACK_PIPELINE_RUN_EXCHANGE,
-        mp.ANNOUNCE_JOB_EXCHANGE,
-        mp.CLAIM_JOB_EXCHANGE,
-        mp.END_JOB_EXCHANGE,
-        mp.JOB_LOGS_EXCHANGE,
+        #'mettle_state',
+        #mp.ANNOUNCE_SERVICE_EXCHANGE,
+        #mp.ANNOUNCE_PIPELINE_RUN_EXCHANGE,
+        #mp.ACK_PIPELINE_RUN_EXCHANGE,
+        #mp.CLAIM_JOB_EXCHANGE,
+        #mp.END_JOB_EXCHANGE,
+        #mp.JOB_LOGS_EXCHANGE,
     ]
 
     username = password = 'guest'
@@ -64,6 +64,7 @@ def main():
         print "NEW MESSAGE"
         print "exchange:", method.exchange
         print "routing key:", method.routing_key
+        print "headers:", json.dumps(properties.headers, indent=2)
         print "payload:", json.dumps(payload, indent=2)
         print ""
         channel.basic_ack(method.delivery_tag)

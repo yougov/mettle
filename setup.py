@@ -13,8 +13,12 @@ setup_params = dict(
     ]),
     packages=setuptools.find_packages(),
     include_package_data=True,
+
+    # Dependency versions are intentionally pinned to prevent surprises at
+    # deploy time.  The world is not yet safely semver.
     install_requires=[
         'croniter==0.3.5',
+        'functools32==3.2.3-1',
         'gevent==1.0.1',
         'gevent-websocket==0.9.3',
         'gunicorn==19.1.1',

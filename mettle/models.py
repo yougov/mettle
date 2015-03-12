@@ -139,6 +139,7 @@ class PipelineRun(Base):
     # These fields are set when we get an ack from the ETL service
     ack_time = Column(DateTime(timezone=True))
     targets = Column(MutableDict.as_mutable(JSON), default={})
+    target_parameters = Column(MutableDict.as_mutable(JSON), default={})
 
     # end_time is set by dispatcher after it has heard in from all job runs
     end_time = Column(DateTime(timezone=True))
@@ -208,6 +209,7 @@ class PipelineRun(Base):
         job = Job(
             pipeline_run=self,
             target=target,
+            target_parameters=self.target_parameters.get(target),
         )
         db.add(job)
         try:
@@ -273,6 +275,7 @@ class Job(Base):
     pipeline_run_id = Column(Integer, ForeignKey('pipeline_runs.id'),
                              nullable=False)
     target = Column(Text, nullable=False)
+    target_parameters = Column(MutableDict.as_mutable(JSON), default={})
     succeeded = Column(Boolean, nullable=False, default=False,
                        server_default=text('false'))
     created_time = Column(DateTime(timezone=True), nullable=False,
