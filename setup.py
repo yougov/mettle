@@ -28,7 +28,7 @@ setup_params = dict(
         'sqlalchemy==0.9.8',
         'Werkzeug==0.10.1',
 
-        # leave mettle-protocol and its dependencies unversioned for now.
+        # leave mettle-protocol and its dependencies loosely versioned.
         'mettle-protocol>=1.0.0',
         'pika',
         'utc',
