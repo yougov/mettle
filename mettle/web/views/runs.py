@@ -1,5 +1,17 @@
+import pika
+
 from mettle.web.framework import JSONResponse, View
+from mettle.web.rabbit import state_message_stream
 from mettle.models import JobLogLine, Job, PipelineRun, Pipeline, Service
+
+
+class RunList(View):
+    def get(self, service_name, pipeline_name):
+        service = self.db.query(Service).filter_by(name=service_name).one()
+        pipeline = self.db.query(Pipeline).filter_by(service=service,
+                                                      name=pipeline_name).one()
+        runs = self.db.query(PipelineRun).filter_by(pipeline=pipeline)
+        return JSONResponse(dict(objects=[r.as_dict() for r in runs]))
 
 
 class RunDetails(View):
@@ -15,12 +27,21 @@ class RunDetails(View):
         data['pipeline'] = run.pipeline.as_dict()
         return JSONResponse(data)
 
+    def websocket(self, service_name, pipeline_name, run_id):
+        settings = self.app.settings
+        exchange = settings['state_exchange']
+        routing_key = '%s.%s.%s' % (service_name, pipeline_name, run_id)
+
+        for msg in state_message_stream(settings.rabbit_url, exchange,
+                                        routing_key):
+            self.ws.send(msg)
+
 
 class RunJobs(View):
     def get(self, service_name, pipeline_name, run_id, target=None):
 
         jobs = self.db.query(Job).join(
-            PipelineRun).join(Pipeline).join(Service).join(Pipeline).filter(
+            PipelineRun).join(Pipeline).join(Service).filter(
                 Service.name==service_name,
                 Pipeline.name==pipeline_name,
                 PipelineRun.pipeline_id==Pipeline.id,
@@ -33,6 +54,44 @@ class RunJobs(View):
         return JSONResponse({
             'jobs': [j.as_dict() for j in jobs]
         })
+
+    def websocket(self, service_name, pipeline_name, run_id):
+        settings = self.app.settings
+        exchange = settings['state_exchange']
+        routing_key = '%s.%s.%s.jobs.*' % (service_name, pipeline_name, run_id)
+
+        for msg in state_message_stream(settings.rabbit_url, exchange,
+                                        routing_key):
+            self.ws.send(msg)
+
+
+class RunNacks(View):
+    def get(self, service_name, pipeline_name, run_id, target=None):
+
+        nacks = self.db.query(PipelineRunNack).join(
+            PipelineRun).join(Pipeline).join(Service).filter(
+                Service.name==service_name,
+                Pipeline.name==pipeline_name,
+                PipelineRun.pipeline_id==Pipeline.id,
+                PipelineRunNack.pipeline_run_id==run_id,
+            )
+
+        if target is not None:
+            nacks = nacks.filter_by(target=target)
+
+        return JSONResponse({
+            'nacks': [j.as_dict() for j in nacks]
+        })
+
+    def websocket(self, service_name, pipeline_name, run_id):
+        settings = self.app.settings
+        exchange = settings['state_exchange']
+        routing_key = '%s.%s.%s.nacks.*' % (service_name, pipeline_name, run_id)
+
+        for msg in state_message_stream(settings.rabbit_url, exchange,
+                                        routing_key):
+            self.ws.send(msg)
+
 
 
 class RunJob(View):

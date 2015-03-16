@@ -11,27 +11,30 @@ from sqlalchemy.orm import scoped_session
 from mettle.web.framework import App
 from mettle.settings import get_settings
 from mettle.db import make_session_cls
-from mettle.web.views import (logs, examples, services, pipelines, runs, index,
-                              state)
+from mettle.web.views import (logs, examples, services, pipelines, runs, index)
 
 
 routes = [
+    # The one view that returns HTML.  Everything else is JSON API.
     ('/', 'index', index.Index),
-    ('/people/<name>/', 'hello', examples.Hello),
-    ('/count/', 'count', examples.Counter),
-    ('/socketcount/', 'socketcount', examples.SocketCounter),
-    ('/messages/', 'messages', examples.StreamMessages),
-    ('/echo/', 'echo', examples.SocketEcho),
-
-    # Updates to changes in services, pipelines, pipeline runs, and jobs.
-    ('/api/state_stream/', 'state_stream', state.StateStream),
 
     # Show all services
     ('/api/services/', 'list_services', services.ServiceList),
 
+    # Details on one service. 
+    #('/api/services/<service_name>/', 'details_service', services.ServiceDetail),
+
+    # Summary for each pipeline in a service
+    ('/api/services/<service_name>/pipelines/', 'list_pipelines',
+     pipelines.PipelineList),
+
     # Details for a pipeline
     ('/api/services/<service_name>/pipelines/<pipeline_name>/',
      'details_pipeline', pipelines.PipelineDetails),
+
+    # List of runs for a pipeline
+    ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/',
+     'list_runs', runs.RunList),
 
     # Details for a pipeline run
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/',

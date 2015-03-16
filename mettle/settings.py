@@ -19,6 +19,9 @@ DEFAULTS = {
     'job_log_lookback_minutes': 10,
 
     'web_worker_timeout': 30,
+
+    # The RabbitMQ exchange where updates to Postgres tables are published.
+    'state_exchange': 'mettle_state',
 }
 
 

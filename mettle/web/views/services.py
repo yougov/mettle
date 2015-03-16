@@ -19,5 +19,5 @@ class ServiceList(View):
     def get(self):
         services = self.db.query(Service).order_by(func.lower(Service.name)).all()
         return JSONResponse(dict(
-            services=[service_summary(s) for s in services]
+            objects=[service_summary(s) for s in services]
         ))

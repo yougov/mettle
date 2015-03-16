@@ -1,5 +1,4 @@
 from mettle.web.framework import View, Response
-from mettle.web.rabbit import RabbitSocketView
 
 class Index(View):
     def get(self):
@@ -51,15 +50,3 @@ class SocketCounter(View):
     def websocket(self):
         for line in SleepyCounter():
             self.ws.send(line)
-
-
-class StreamMessages(RabbitSocketView):
-    def websocket(self):
-        bindings = [
-            (mp.ANNOUNCE_PIPELINE_RUN_EXCHANGE, '#'),
-            (mp.ACK_PIPELINE_RUN_EXCHANGE, '#'),
-            (mp.CLAIM_JOB_EXCHANGE, '#'),
-            (mp.END_JOB_EXCHANGE, '#'),
-            (mp.JOB_LOGS_EXCHANGE, '#'),
-        ]
-        self.stream(bindings)

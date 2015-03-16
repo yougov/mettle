@@ -33,5 +33,4 @@ bin
 lib
 include
 local
-mettle/static/js/*
 mettle/static/components/*

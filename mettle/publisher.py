@@ -9,15 +9,6 @@ Messages will be UPDATE, INSERT, or DELETE events from the following tables:
 - pipeline_runs_nacks
 - jobs
 
-The Rabbit exchange will be of the 'headers' type.  The following headers will
-always be included
-    - 'table'
-    - 'id'
-
-When table is 'pipeline_runs_nacks' or 'jobs', then a 'pipeline_run_id' header
-will also be included.
-
-When the table is 'jobs', then a 'target' header will also be included.
 """
 import json
 import logging
@@ -44,8 +35,8 @@ def main():
 
     rabbit_conn = pika.BlockingConnection(pika.URLParameters(settings.rabbit_url))
     rabbit = rabbit_conn.channel()
-    exchange = settings.get('state_exchange', 'mettle_state')
-    rabbit.exchange_declare(exchange=exchange, type='headers', durable=True)
+    exchange = settings['state_exchange']
+    rabbit.exchange_declare(exchange=exchange, type='topic', durable=True)
 
     with conn.cursor() as curs:
         logger.info("Listening for notifications to %s." % pg_listen_channel)
@@ -64,32 +55,35 @@ def main():
                     if payload.get('error') == 'too long':
                         payload = get_record_as_json(curs, table, payload['id'])
 
-                    headers = {
-                        'table': table,
-                        'id': payload['id'],
-                    }
-
-                    if table in ['pipelines_runs_nacks', 'jobs']:
-                        headers['pipeline_run_id'] = payload['pipeline_run_id']
-
-                        if table == 'jobs':
-                            headers['target'] = payload['target']
-
                     # add service_name and pipeline_name where applicable, doing
                     # another DB lookup if necessary.
                     extra = extra_data(curs, table, payload['id'])
-                    headers.update(extra)
                     payload.update(extra)
 
                     rabbit.basic_publish(
                         exchange=exchange,
-                        routing_key='',
+                        routing_key=data_to_routing_key(payload),
                         body=json.dumps(payload),
                         properties=pika.BasicProperties(
                             delivery_mode=PIKA_PERSISTENT_MODE,
-                            headers=headers,
                         )
                     )
+
+def data_to_routing_key(data):
+    table = data['tablename']
+    if table == 'services':
+        return data['name']
+    elif table == 'pipelines':
+        return '{service_name}.{name}'.format(**data)
+    elif table == 'pipeline_runs':
+        return '{service_name}.{pipeline_name}.{id}'.format(**data)
+    elif table == 'pipeline_runs_nacks':
+        return '{service_name}.{pipeline_name}.{pipeline_run_id}.nacks.{id}'.format(**data)
+    elif table == 'jobs':
+        return '{service_name}.{pipeline_name}.{pipeline_run_id}.jobs.{id}'.format(**data)
+    else:
+        raise ValueError('Unknown table: %s' % table)
+
 
 def get_record_as_json(cur, tablename, row_id):
     """
@@ -109,7 +103,7 @@ def get_record_as_json(cur, tablename, row_id):
 
 
 # published rows from most tables won't include a 'service_name' or
-# 'pipeline_name', but we want to include those as headers that consumers can
+# 'pipeline_name', but we want to include those as fields that consumers can
 # use to filter their streams.  These lookup functions will get that extra data,
 # with a cache so we don't have to do an extra DB read for every single write.
 

@@ -126,10 +126,13 @@ def on_job_end(settings, rabbit, db, data):
                                                                 job.id))
                         lock_and_announce_job(db, rabbit, new_job)
 
+    # Force the job update to be committed/published before we start making any
+    # changes to the run.
+    db.commit()
     if run.end_time is None and run.is_ended(db):
-        run.end_time = end_time
         if run.all_targets_succeeded(db):
             run.succeeded = True
+        run.end_time = end_time
 
 
 def main():

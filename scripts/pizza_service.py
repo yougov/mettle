@@ -24,7 +24,7 @@ class PizzaPipeline(mp.Pipeline):
         Given a target, and a UTC execution start time, return a UTC datetime
         for when the system should consider the job to have failed.
         """
-        # Foo just hardcodes a 1 minute expiration time.
+        # We just hardcode a 1 minute expiration time.
         return start_time + timedelta(minutes=1)
 
     def make_target(self, target_time, target, target_parameters):

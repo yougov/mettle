@@ -29,7 +29,7 @@ def main():
     host = 'localhost'
     vhost = '/'
     exchanges = [
-        #'mettle_state',
+        'mettle_state',
         #mp.ANNOUNCE_SERVICE_EXCHANGE,
         #mp.ANNOUNCE_PIPELINE_RUN_EXCHANGE,
         #mp.ACK_PIPELINE_RUN_EXCHANGE,
