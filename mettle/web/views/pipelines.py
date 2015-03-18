@@ -1,5 +1,6 @@
-from mettle.web.framework import JSONResponse, View
 from mettle.models import Pipeline, Service
+from mettle.web.framework import JSONResponse, View
+from mettle.web.rabbit import state_message_stream
 
 
 class PipelineList(View):
@@ -9,6 +10,21 @@ class PipelineList(View):
             service=service
         )
         return JSONResponse(dict(objects=[p.as_dict() for p in pipelines]))
+
+    def websocket(self, service_name):
+        settings = self.app.settings
+        exchange = settings['state_exchange']
+
+        # Match all messages that have only two components in the routing key,
+        # where the first one is the service_name whose pipelines we're
+        # watching.
+        # See publisher.py for more details on how the routing key works on this
+        # exchange.
+        routing_key = '%s.*' % service_name
+
+        for msg in state_message_stream(settings.rabbit_url, exchange,
+                                        routing_key):
+            self.ws.send(msg)
 
 
 class PipelineDetails(View):

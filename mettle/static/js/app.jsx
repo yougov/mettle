@@ -11,6 +11,25 @@
     }
   });
 
+  Breadcrumbs = React.createClass({
+    mixins: [Router.State],
+    render: function() {
+      var links = [<li><Link to="App" className="title">Mettle</Link></li>];
+      var params = this.getParams();
+
+      if (params.serviceName) {
+        links.push(<li><Link to="Service" params={params}>{params.serviceName}</Link></li>);
+        if (params.pipelineName) {
+          links.push(<li><Link to="Pipeline" params={params}>{params.pipelineName}</Link></li>);
+          if (params.runId) {
+            links.push(<li><Link to="PipelineRun" params={params}>{params.runId}</Link></li>);
+          };
+        };
+      };
+      return (<ul className="nav">{links}</ul>);
+    }
+  });
+
   App = React.createClass({
     mixins: [Router.State],
     render: function () {
@@ -18,14 +37,9 @@
       return (
         <div>
           <header>
-            <ul>
-              <li><Link to="App">Home</Link></li>
-              <li><Link to="PipelineRun" params={{serviceName: "pizza", pipelineName: "pepperoni", runId: "1"}}>PR 1</Link></li>
-              <li><Link to="PipelineRun" params={{serviceName: "foo", pipelineName: "bar", runId: "2"}}>PR 2</Link></li>
-            </ul>
-            Logged in as Jane
+            <Breadcrumbs />
+            <div className="user">Logged in as Jane</div>
           </header>
-
           {inside} 
         </div>
       );

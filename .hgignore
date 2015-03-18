@@ -33,4 +33,4 @@ bin
 lib
 include
 local
-mettle/static/components/*
+mettle/static/bower/*

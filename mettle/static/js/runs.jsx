@@ -49,67 +49,94 @@
         };
       },
 
-      componentDidMount: function() {
-        var params = this.getParams();
-        Mettle.getRun(params.serviceName,
-                      params.pipelineName,
-                      params.runId,
-                      this.onPipelineData);
-
-        var jobStream = Mettle.getJobsStream(params.serviceName,
-                                             params.pipelineName,
-                                             params.runId);
-        jobStream.onmessage = this.onJobMessage;
-      },    
-
-      onPipelineData: function(data) {
-        var targetJobs = this.state.targetJobs;
-        _.each(data.jobs, function(job) {
-          targetJobs = this.updateTargetJobs(job, targetJobs);
-        }.bind(this));
-          
-          
-        this.setState({
-          runId: data.id,
-          graph: layoutGraph(data.targets, this.nodeSize),
-          targetJobs: targetJobs,
-          pipeline: data.pipeline
-        });
-      },
-
-      onJobMessage: function(ev) {
-        this.setState({
-          targetJobs: this.updateTargetJobs(JSON.parse(ev.data), this.state.targetJobs)
-        });
-      },
-
-      updateTargetJobs: function(job, targetJobs) {
-        // given a job record, and our targetJobs store, see whether the job is
-        // already present in the store.
-        //
-        // If so, just update it.
-        //
-        // If not, then add it.
-        //
-        // Return the store object.
-        if (targetJobs[job.target] === undefined) {
-          targetJobs[job.target] = {};
-        }
-
-        targetJobs[job.target][job.id] = job;
-        return targetJobs;
-      },
-
-      render: function() {
-        var key = 'run_' + this.getParams().runId
-        return (
-            <div>
-              <h4>Run: {this.getParams().runId}</h4>
-              <PipelineGraph graph={this.state.graph} targetJobs={this.state.targetJobs} pipeline={this.state.pipeline} nodeSize={this.nodeSize} key={key} />
-              <RouteHandler />
-            </div>
-        );
+    cleanup: function() {
+      if (this.request) {
+        this.request.abort();
+        this.request = undefined;
       }
+
+      if (this.ws) {
+        this.ws.close();
+        this.ws = undefined;
+      }
+
+    },
+
+    componentWillUnmount: function () {
+      this.cleanup();
+    },
+
+    componentDidMount: function() {
+      this.getData();
+    },
+
+    componentWillReceiveProps: function(nextProps) {
+      this.getData(nextProps);
+    },
+
+    getData: function(nextProps) {
+      this.cleanup();
+      this.setState(this.getInitialState());
+      var params = this.getParams();
+      console.log('params', params);
+      this.request = Mettle.getRun(params.serviceName,
+                                   params.pipelineName,
+                                   params.runId,
+                                   this.onPipelineData);
+
+      this.ws = Mettle.getJobsStream(params.serviceName,
+                                     params.pipelineName,
+                                     params.runId);
+      this.ws.onmessage = this.onJobMessage;
+
+      // TODO: Also subscribe to the run's stream to see when its end_time and
+      // succeeded fields change.
+    },    
+
+    onPipelineData: function(resp) {
+      var data = resp.body;
+        
+      this.setState({
+        runId: data.id,
+        graph: layoutGraph(data.targets, this.nodeSize),
+        pipeline: data.pipeline,
+        targetJobs: _.reduce(data.jobs, this.updateTargetJobs, this.state.targetJobs, this)
+      });
+    },
+
+    onJobMessage: function(ev) {
+      this.setState({
+        targetJobs: this.updateTargetJobs(this.state.targetJobs, JSON.parse(ev.data))
+      });
+    },
+
+    updateTargetJobs: function(targetJobs, job) {
+      // given our targetJobs store, and a job record, see whether the job is
+      // already present in the store.
+      //
+      // If so, just update it.
+      //
+      // If not, then add it.
+      //
+      // Return the store object.
+      if (targetJobs[job.target] === undefined) {
+        targetJobs[job.target] = {};
+      }
+
+      targetJobs[job.target][job.id] = job;
+      return targetJobs;
+    },
+
+    render: function() {
+      var key = 'run_' + this.getParams().runId
+      return (
+          <div>
+            <h4>Run: {this.getParams().runId}</h4>
+            <PipelineGraph graph={this.state.graph} targetJobs={this.state.targetJobs} pipeline={this.state.pipeline} nodeSize={this.nodeSize} key={key} />
+            <RouteHandler />
+          </div>
+      );
+    }
   });
 
   var PipelineGraph = React.createClass({
@@ -155,7 +182,7 @@
           return true;
         } else if (_.keys(jobs).length === 0) {
           return true;
-        } else if (_.all(jobs, function(job) {job.start_time===null})) {
+        } else if (_.all(jobs, function(job) {return job.start_time===null;})) {
           return true;
         }
       }
@@ -191,12 +218,12 @@
     },
 
     render: function() {
-      var jobCount = this.props.jobs===undefined ? 0 : _.keys(this.props.jobs).length;
+      var failCount = _.filter(this.props.jobs, function(job) {return job.end_time!==null && job.succeeded==false;}).length || '';
       var status = this.getStatus();
       return (
         <g>
           <rect className={status} x={this.props.node.x} y={this.props.node.y} width={this.props.node.width} height={this.props.node.height} rx="1" ry="1" />
-          <text x={this.props.node.x} y={this.props.node.y}>{jobCount}</text>
+          <text className="failCount" x={this.props.node.x + 2} y={this.props.node.y + 28}>{failCount}</text>
         </g>
       );
     }
@@ -227,15 +254,70 @@
 
   var RunsList = Mettle.components.RunsList = React.createClass({
     mixins: [Router.State],
+
+    getInitialState: function () {
+      return {'runs': {}};
+    },
+
+    getData: function(nextProps) {
+      this.cleanup();
+
+      var props = nextProps || this.props;
+      this.request = Mettle.getRuns(props.serviceName, props.pipelineName, this.onRunsData);
+      this.ws = Mettle.getRunsStream(props.serviceName, props.pipelineName);
+      this.ws.onmessage = this.onRunsStreamData;
+    },
+
+    cleanup: function() {
+      if (this.request) {
+        this.request.abort();
+        this.request = undefined;
+      }
+
+      if (this.ws) {
+        this.ws.close();
+        this.ws = undefined;
+      }
+    },
+
+    componentWillUnmount: function () {
+      this.cleanup();
+    },
+
+    componentDidMount: function() {
+      this.getData();
+    },
+
+    componentWillReceiveProps: function(nextProps) {
+      this.getData(nextProps);
+    },
+
+    onRunsData: function(resp) {
+      var data = resp.body;
+      this.setState({
+        'runs': _.reduce(data.objects, function (runs, run) {
+          runs[run.id] = run;
+          return runs;
+        }, {})
+      });
+    },
+
+    onRunsStreamData: function(ev) {
+      var run = JSON.parse(ev.data);
+      var runs = this.state.runs;
+      runs[run.id] = run;
+      this.setState({'runs': runs});
+    },
+
     render: function() {
-      var nodes = _.map(this.props.runs, function(data) {
+      var nodes = _.map(this.state.runs, function(data) {
         var params = {
-          serviceName: this.getParams().serviceName,
-          pipelineName: this.getParams().pipelineName,
+          serviceName: this.props.serviceName,
+          pipelineName: this.props.pipelineName,
           runId: data.id
         };
         return (
-          <li key={"run-link-" + data.name}>
+          <li key={"run-link-" + data.id}>
             <Link to="PipelineRun" params={params}>{data.id}</Link>
           </li>);
       }, this);

@@ -13,6 +13,22 @@ class RunList(View):
         runs = self.db.query(PipelineRun).filter_by(pipeline=pipeline)
         return JSONResponse(dict(objects=[r.as_dict() for r in runs]))
 
+    def websocket(self, service_name, pipeline_name):
+        settings = self.app.settings
+        exchange = settings['state_exchange']
+
+        # Match all messages that have only three components in the routing key,
+        # where the first one is the service_name whose pipelines we're
+        # watching, and the second is the pipeline name, and the third can be
+        # any pipeline run id.
+        # See publisher.py for more details on how the routing key works on this
+        # exchange.
+        routing_key = '%s.%s.*' % (service_name, pipeline_name)
+
+        for msg in state_message_stream(settings.rabbit_url, exchange,
+                                        routing_key):
+            self.ws.send(msg)
+
 
 class RunDetails(View):
     def get(self, service_name, pipeline_name, run_id):

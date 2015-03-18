@@ -1,6 +1,8 @@
 (function(global) {
 
   var debug = true;
+
+  var request = global.superagent;
   var log = function(txt) {
     if (debug) {
       console.log(txt);
@@ -51,27 +53,38 @@
   };
 
   Mettle.getServices = function (cb) {
-    $.getJSON(getServicesURL(), cb);
+    return request.get(getServicesURL(), cb);
+  };
+
+  Mettle.getServicesStream = function() {
+    return new ReconnectingWebSocket(WSPREFIX + getServicesURL());
   };
 
   Mettle.getPipelines = function (serviceName, cb) {
-    $.getJSON(getPipelinesURL(serviceName), cb);
+    var url = getPipelinesURL(serviceName);
+    return request.get(url, cb);
+  };
+
+  Mettle.getPipelinesStream = function(serviceName) {
+    return new ReconnectingWebSocket(WSPREFIX + getPipelinesURL(serviceName));
   };
 
   Mettle.getRuns = function (serviceName, pipelineName, cb) {
-    $.getJSON(getRunsURL(serviceName, pipelineName), cb);
+    var url = getRunsURL(serviceName, pipelineName);
+    return request.get(url, cb);
+  };
+
+  Mettle.getRunsStream = function(serviceName, pipelineName) {
+    return new ReconnectingWebSocket(WSPREFIX + getRunsURL(serviceName, pipelineName));
   };
 
   Mettle.getRun = function (serviceName, pipelineName, runId, cb) {
-    $.getJSON(getRunURL(serviceName, pipelineName, runId), cb);
+    var url = getRunURL(serviceName, pipelineName, runId);
+    return request.get(url, cb);
   };
 
   Mettle.getRunStream = function (serviceName, pipelineName, runId) {
     return new ReconnectingWebSocket(getRunURL(serviceName, pipelineName, runId));
-  };
-
-  Mettle.getJobs = function (serviceName, pipelineName, runId, cb) {
-    $.getJSON(getJobsURL(serviceName, pipelineName, runId), cb);
   };
 
   Mettle.getJobsStream = function (serviceName, pipelineName, runId) {

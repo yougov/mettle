@@ -3,7 +3,11 @@
     <title>Mettle</title>
 
     <!--style-->
+    <link rel="stylesheet" href="/static/font/roboto/stylesheet.css" />
     <link rel="stylesheet" href="/static/css/mettle.css" />
+  </head>
+  <body>
+    <div id="content"></div>
 
     <!--libraries-->
     <script src="/static/components/lodash/lodash.min.js" type="text/javascript" charset="utf-8" ></script>
@@ -12,7 +16,7 @@
     <script src="/static/components/graphlib/dist/graphlib.core.js" type="text/javascript" charset="utf-8" ></script>
     <script src="/static/components/dagre/dist/dagre.core.js" type="text/javascript" charset="utf-8" ></script>
     <script src="/static/components/reconnectingWebsocket/reconnecting-websocket.min.js" type="text/javascript" charset="utf-8" ></script>
-    <script src="/static/components/zepto/zepto.min.js" type="text/javascript" charset="utf-8" ></script>
+    <script src="/static/components/superagent/superagent.js" type="text/javascript" charset="utf-8" ></script>
 
     <!--core logic and API interaction.-->
     <script src="/static/js/mettle.js" type="text/javascript"></script>
@@ -23,8 +27,5 @@
     <script src="/static/js/pipelines.jsx" type="text/jsx"></script>
     <script src="/static/js/services.jsx" type="text/jsx"></script>
     <script src="/static/js/app.jsx" type="text/jsx"></script>
-  </head>
-  <body>
-    <div id="content"></div>
   </body>
 </html>

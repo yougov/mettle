@@ -6,7 +6,7 @@
   "ignore": [
     "**/.*",
     "node_modules",
-    "bower_components",
+    "bower",
     "test",
     "tests"
   ],
@@ -16,9 +16,11 @@
     "react-router": "~0.12.4",
     "react": "~0.12.2",
     "reconnectingWebsocket": "git@github.com:joewalnes/reconnecting-websocket.git",
-    "zepto": "~1.1.6"
+    "superagent": "~0.21.0",
+    "bootstrap": "~3.3.4"
   },
   "resolutions": {
-    "lodash": "~3.3.1"
+    "lodash": "~3.3.1",
+    "superagent": "~0.21.0"
   }
 }
