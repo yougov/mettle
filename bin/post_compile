@@ -1,0 +1,8 @@
+#!/bin/bash
+
+nodeenv -p --prebuilt
+
+npm install -g react-tools bower
+
+cd mettle/static
+bower install

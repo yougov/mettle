@@ -29,8 +29,4 @@ tmp/
 local_options.py
 node_modules
 mettle.egg-info/*
-bin
-lib
-include
-local
 mettle/static/bower/*
