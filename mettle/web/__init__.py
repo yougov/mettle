@@ -11,7 +11,8 @@ from sqlalchemy.orm import scoped_session
 from mettle.web.framework import App
 from mettle.settings import get_settings
 from mettle.db import make_session_cls
-from mettle.web.views import (logs, examples, services, pipelines, runs, index)
+from mettle.web.views import (logs, examples, services, pipelines, runs,
+                              targets, index)
 
 
 routes = [
@@ -19,52 +20,60 @@ routes = [
     ('/', 'index', index.Index),
 
     # Show all services
-    ('/api/services/', 'list_services', services.ServiceList),
+    ('/api/services/', 'service_list', services.ServiceList),
 
     # Details on one service. 
-    #('/api/services/<service_name>/', 'details_service', services.ServiceDetail),
+    ('/api/services/<service_name>/', 'service_detail', services.ServiceDetail),
 
     # Summary for each pipeline in a service
-    ('/api/services/<service_name>/pipelines/', 'list_pipelines',
+    ('/api/services/<service_name>/pipelines/', 'pipeline_list',
      pipelines.PipelineList),
 
     # Details for a pipeline
     ('/api/services/<service_name>/pipelines/<pipeline_name>/',
-     'details_pipeline', pipelines.PipelineDetails),
+     'pipeline_detail', pipelines.PipelineDetails),
 
     # List of runs for a pipeline
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/',
-     'list_runs', runs.RunList),
+     'run_list', runs.RunList),
 
     # Details for a pipeline run
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/',
-     'details_run', runs.RunDetails),
+     'run_detail', runs.RunDetails),
 
     # Logs for a pipeline run.
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/logs/',
-     'logs_run', logs.Log),
+     'run_logs', logs.Log),
 
     # Show all jobs in a run
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/jobs/',
-     'run_jobs', runs.RunJobs),
+     'run_job_list', runs.RunJobs),
 
     # Show a job in a run, by job ID
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/jobs/<int:job_id>/',
-     'run_job', runs.RunJob),
+     'run_job_detail', runs.RunJob),
+
+    # All log lines for a given job.
+    ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/jobs/<int:job_id>/logs/',
+     'run_job_logs', logs.Log),
 
     # Show all jobs in a run for a given target
-    ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/targets/<target>/',
-     'run_target', runs.RunJobs),
+    ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/targets/<target>/jobs/',
+     'target_job_list', targets.TargetJobs),
 
-    ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/targets/<target>/logs/',
-     'logs_target', logs.Log),
 ]
+
+class StaticMiddleware(SharedDataMiddleware):
+
+    @property
+    def current_app(self):
+        return self.app.current_app
 
 if 'app' not in globals():
     settings = get_settings()
     app = App(routes, settings)
     app.db = scoped_session(make_session_cls(settings.db_url))
-    app = SharedDataMiddleware(app, {
+    app = StaticMiddleware(app, {
         '/static': ('mettle', 'static')
     })
 

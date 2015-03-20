@@ -7,125 +7,14 @@
   <script type="text/javascript" charset="utf-8" src="./dagre.js"></script>
   </head>
   <body>
-<svg width="800" height="800" id="graph"></svg>
-<script type="text/javascript" charset="utf-8">
-
-var pizzaGraph = {
-  "flour": [],
-  "water": [],
-  "yeast": [],
-  "sugar": [],
-  "salt": [],
-  "olive oil": [],
-  "mix": ["flour", "water", "yeast", "sugar", "salt", "olive oil"],
-  "raise": ["mix"],
-  "roll": ["raise"],
-  "sauce": ["roll"],
-  "cheese": ["sauce"],
-  "pepperoni": ["sauce"],
-  "bake": ["cheese", "pepperoni"],
-  "box": ["bake"],
-  "deliver": ["box"],
-  "eat": ["deliver"]
-};
-
-// Create a new directed graph 
-var g = new dagre.graphlib.Graph();
-
-g.setGraph({
-    'rankdir': 'TB',
-    'nodesep': '20',
-    'ranksep': 20,
-  });
-
-// Default to assigning a new object as a label for each new edge.
-g.setDefaultEdgeLabel(function() { return {}; });
-
-_.forOwn(pizzaGraph, function(val, key, obj) {
-    g.setNode(key, { label:key,  width: 30, height: 30 });
-});
-
-
-_.forOwn(pizzaGraph, function(val, key, obj) {
-    _.each(val, function(i) {
-      g.setEdge(i, key);
-    });
-});
-
-dagre.layout(g);
-
-// OK now let's loop over and draw some damn nodes.
-var graph = document.querySelector("#graph");
-g.nodes().forEach(function(v) {
-  var node = g.node(v);
-  var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-  rect.setAttribute("x", node.x);
-  rect.setAttribute("y", node.y);
-  rect.setAttribute("width", node.width);
-  rect.setAttribute("height", node.height);
-  rect.setAttribute("stroke", "#CCC");
-  rect.setAttribute("stroke-width", "1");
-  rect.setAttribute("fill", "transparent");
-  graph.appendChild(rect);
-
-  var txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  txt.innerHTML = node.label;
-  txt.setAttribute("x", node.x + 10);
-  txt.setAttribute("y", node.y + 20);
-  graph.appendChild(txt);
-});
-
-var shade = 1;
-
-var dot;
-var offset;
-var line, curve, dLine, dCurve;
-
-var edges = g.edges();
-var e;
-var p;
-var cp;
-var pNext;
-var offsetPoints;
-for (var i=0; i<edges.length;i++) {
-    e = edges[i];
-
-    var edge = g.edge(e);
-    var from = g.node(e.v);
-    offset = {x: from.width / 2, y: from.height / 2}
-    var to = g.node(e.w);
-    line = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    curve = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    dLine = "";
-    dCurve = "";
-    for (var j=0;j<edge.points.length;j++) {
-      p = edge.points[j];
-
-      if (j===0) {
-        dLine += "M ";
-      } else {
-        dLine += "L ";
-      }
-      dLine += (p.x + offset.x) + " " + (p.y + offset.y) + " ";
-
-    }
-
-    offsetPoints = _.map(edge.points, function(p) {
-        return {x: p.x + offset.x, y: p.y + offset.y};
-    });
-
-    line.setAttribute("d", dLine);
-    line.setAttribute("fill", "transparent");
-    line.setAttribute("stroke-width", "1");
-    line.setAttribute("stroke", "#ccc");
-    graph.appendChild(line);
-};
-
-var output = g.graph();
-
-graph.setAttribute("width", output.width + 20);
-graph.setAttribute("height", output.height + 20);
-
-</script>
+<svg width="800" height="800" id="graph">
+  <g>
+  <rect x="20" y="20" width="100" height="100" fill="#333">
+  </rect>
+    <a xlink:href="https://www.google.com/">
+    <rect x="20" y="20" width="30" height="30" fill="transparent"></rect>
+    </a>
+    </g>
+</svg>
   </body>
 </html>

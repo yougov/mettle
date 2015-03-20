@@ -14,19 +14,35 @@
   Breadcrumbs = React.createClass({
     mixins: [Router.State],
     render: function() {
-      var links = [<li><Link to="App" className="title">Mettle</Link></li>];
+      var links = [];
       var params = this.getParams();
 
       if (params.serviceName) {
-        links.push(<li><Link to="Service" params={params}>{params.serviceName}</Link></li>);
+        links.push(<li key={params.serviceName}>
+          <Link to="Service" params={params}>Service: {params.serviceName}</Link>
+          </li>);
         if (params.pipelineName) {
-          links.push(<li><Link to="Pipeline" params={params}>{params.pipelineName}</Link></li>);
+          links.push(<li key={params.pipelineName}>
+            <Link to="Pipeline" params={params}>Pipeline: {params.pipelineName}</Link>
+            </li>);
           if (params.runId) {
-            links.push(<li><Link to="PipelineRun" params={params}>{params.runId}</Link></li>);
-          };
-        };
-      };
-      return (<ul className="nav">{links}</ul>);
+            links.push(<li key={"run-" + params.runId}>
+              <Link to="PipelineRun" params={params}> Run: {params.runId}</Link>
+              </li>);
+            if (params.target) {
+              links.push(<li key={params.target}>
+                <Link to="Target" params={params}>Target: {params.target}</Link>
+                </li>);
+              if (params.jobId) {
+                links.push(<li key={"job-" + params.jobId}>
+                    <Link to="Job" params={params}>Job: {params.jobId}</Link>
+                    </li>);
+              }
+            }
+          }
+        }
+      }
+      return (<ul className="mettle-nav list-inline ">{links}</ul>);
     }
   });
 
@@ -36,9 +52,9 @@
       var inside = this.getParams().serviceName ? <RouteHandler /> : <Mettle.components.ServicesList />;
       return (
         <div>
-          <header>
+          <header  className="pure-u-1">
+            <h1 className="title"><Link to="App">Mettle</Link></h1>
             <Breadcrumbs />
-            <div className="user">Logged in as Jane</div>
           </header>
           {inside} 
         </div>
@@ -50,7 +66,11 @@
     <Route name="App" path="/" handler={App}>
       <Route name="Service" path="services/:serviceName/" handler={Mettle.components.Service}>
         <Route name="Pipeline" path="pipelines/:pipelineName/" handler={Mettle.components.Pipeline}>
-          <Route name="PipelineRun" path="runs/:runId/" handler={Mettle.components.PipelineRun} />
+          <Route name="PipelineRun" path="runs/:runId/" handler={Mettle.components.PipelineRun}>
+            <Route name="Target" path="targets/:target/" handler={Mettle.components.Target}>
+              <Route name="Job" path="jobs/:jobId/" handler={Mettle.components.Job} />
+            </Route>
+          </Route>
         </Route>
       </Route>
       <NotFoundRoute handler={Mettle.components.NotFound} />

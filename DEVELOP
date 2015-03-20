@@ -16,7 +16,7 @@ SSH into it, and 'cd /vagrant/mettle'.
 
   npm install -g react-tools bower
 
-7. Install frontend JS packages into the mettle/static/ folder:
+7. Install frontend JS/CSS packages into the mettle/static/ folder:
 
   cd mettle/static
   bower install

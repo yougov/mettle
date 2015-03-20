@@ -1,11 +1,11 @@
 import pika
 
-from mettle.web.framework import JSONResponse, View
+from mettle.web.framework import JSONResponse, ApiView
 from mettle.web.rabbit import state_message_stream
 from mettle.models import JobLogLine, Job, PipelineRun, Pipeline, Service
 
 
-class RunList(View):
+class RunList(ApiView):
     def get(self, service_name, pipeline_name):
         service = self.db.query(Service).filter_by(name=service_name).one()
         pipeline = self.db.query(Pipeline).filter_by(service=service,
@@ -16,21 +16,11 @@ class RunList(View):
     def websocket(self, service_name, pipeline_name):
         settings = self.app.settings
         exchange = settings['state_exchange']
-
-        # Match all messages that have only three components in the routing key,
-        # where the first one is the service_name whose pipelines we're
-        # watching, and the second is the pipeline name, and the third can be
-        # any pipeline run id.
-        # See publisher.py for more details on how the routing key works on this
-        # exchange.
         routing_key = '%s.%s.*' % (service_name, pipeline_name)
-
-        for msg in state_message_stream(settings.rabbit_url, exchange,
-                                        routing_key):
-            self.ws.send(msg)
+        self.bind_queue_to_websocket(exchange, routing_key)
 
 
-class RunDetails(View):
+class RunDetails(ApiView):
     def get(self, service_name, pipeline_name, run_id):
         run = self.db.query(PipelineRun).join(Pipeline).join(Service).filter(
             Service.name==service_name,
@@ -47,14 +37,11 @@ class RunDetails(View):
         settings = self.app.settings
         exchange = settings['state_exchange']
         routing_key = '%s.%s.%s' % (service_name, pipeline_name, run_id)
-
-        for msg in state_message_stream(settings.rabbit_url, exchange,
-                                        routing_key):
-            self.ws.send(msg)
+        self.bind_queue_to_websocket(exchange, routing_key)
 
 
-class RunJobs(View):
-    def get(self, service_name, pipeline_name, run_id, target=None):
+class RunJobs(ApiView):
+    def get(self, service_name, pipeline_name, run_id):
 
         jobs = self.db.query(Job).join(
             PipelineRun).join(Pipeline).join(Service).filter(
@@ -64,9 +51,6 @@ class RunJobs(View):
                 Job.pipeline_run_id==run_id,
             )
 
-        if target is not None:
-            jobs = jobs.filter_by(target=target)
-
         return JSONResponse({
             'jobs': [j.as_dict() for j in jobs]
         })
@@ -74,15 +58,15 @@ class RunJobs(View):
     def websocket(self, service_name, pipeline_name, run_id):
         settings = self.app.settings
         exchange = settings['state_exchange']
-        routing_key = '%s.%s.%s.jobs.*' % (service_name, pipeline_name, run_id)
+        routing_key = '%s.%s.%s.jobs.*.*' % (service_name,
+                                              pipeline_name,
+                                              run_id)
+        self.bind_queue_to_websocket(exchange, routing_key)
 
-        for msg in state_message_stream(settings.rabbit_url, exchange,
-                                        routing_key):
-            self.ws.send(msg)
 
 
-class RunNacks(View):
-    def get(self, service_name, pipeline_name, run_id, target=None):
+class RunNacks(ApiView):
+    def get(self, service_name, pipeline_name, run_id):
 
         nacks = self.db.query(PipelineRunNack).join(
             PipelineRun).join(Pipeline).join(Service).filter(
@@ -92,9 +76,6 @@ class RunNacks(View):
                 PipelineRunNack.pipeline_run_id==run_id,
             )
 
-        if target is not None:
-            nacks = nacks.filter_by(target=target)
-
         return JSONResponse({
             'nacks': [j.as_dict() for j in nacks]
         })
@@ -103,14 +84,10 @@ class RunNacks(View):
         settings = self.app.settings
         exchange = settings['state_exchange']
         routing_key = '%s.%s.%s.nacks.*' % (service_name, pipeline_name, run_id)
-
-        for msg in state_message_stream(settings.rabbit_url, exchange,
-                                        routing_key):
-            self.ws.send(msg)
+        self.bind_queue_to_websocket(exchange, routing_key)
 
 
-
-class RunJob(View):
+class RunJob(ApiView):
     def get(self, service_name, pipeline_name, run_id, job_id):
 
         job = self.db.query(Job).join(

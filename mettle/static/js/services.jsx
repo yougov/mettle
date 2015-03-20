@@ -10,14 +10,26 @@
     },
 
     componentDidMount: function() {
+      this.cleanup();
       this.request = Mettle.getServices(this.onServicesData);
       this.ws = Mettle.getServicesStream();
       this.ws.onmessage = this.onServicesStreamData;
     },
 
+    cleanup: function() {
+      if (this.request) {
+        this.request.abort();
+        this.request = undefined;
+      }
+
+      if (this.ws) {
+        this.ws.close();
+        this.ws = undefined;
+      }
+    },
+
     componentWillUnmount: function () {
-      this.request.abort();
-      this.ws.close();
+      this.cleanup();
     },
 
     onServicesData: function(err, data) {
@@ -41,12 +53,13 @@
     render: function () {
       var services = _.map(this.state.services, function(service) {
         return (
-        <div key={'service-'+service.name}>
-          <Link to="Service" params={{serviceName: service.name}}>{service.name}</Link>
-        </div>
+        <tr key={'service-'+service.name}>
+          <td><Link to="Service" params={{serviceName: service.name}}>{service.name}</Link></td>
+          <td>{service.updated_by}</td>
+        </tr>
         );
       });
-      return (<div>{services}</div>);
+      return (<table className="pure-u-1" >{services}</table>);
     }
   });
 
@@ -55,8 +68,7 @@
     render: function() {
       var inside = this.getParams().pipelineName ? <RouteHandler /> : <Mettle.components.PipelinesList serviceName={this.getParams().serviceName} />;
       return (
-        <div>
-        <h2>Service: {this.getParams().serviceName}</h2>
+        <div className="pure-u-1-3">
         {inside}
         </div>
         );

@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+
 def state_message_stream(rabbit_url, exchange, routing_key):
     connection = pika.BlockingConnection(pika.URLParameters(rabbit_url))
     channel = connection.channel()
@@ -19,8 +20,7 @@ def state_message_stream(rabbit_url, exchange, routing_key):
     channel.queue_bind(exchange=exchange,
                        queue=queue_name,
                        routing_key=routing_key)
-    for method, properties, body in channel.consume(queue=queue_name,
-                                                    no_ack=True):
-        yield body
+
+    return connection, channel, channel.consume(queue=queue_name, no_ack=True)
 
 

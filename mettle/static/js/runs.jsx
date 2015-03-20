@@ -78,13 +78,12 @@
       this.cleanup();
       this.setState(this.getInitialState());
       var params = this.getParams();
-      console.log('params', params);
       this.request = Mettle.getRun(params.serviceName,
                                    params.pipelineName,
                                    params.runId,
                                    this.onPipelineData);
 
-      this.ws = Mettle.getJobsStream(params.serviceName,
+      this.ws = Mettle.getRunJobsStream(params.serviceName,
                                      params.pipelineName,
                                      params.runId);
       this.ws.onmessage = this.onJobMessage;
@@ -129,11 +128,11 @@
 
     render: function() {
       var key = 'run_' + this.getParams().runId
+      var inside = this.getParams().target ? <RouteHandler /> : <PipelineGraph graph={this.state.graph} targetJobs={this.state.targetJobs} pipeline={this.state.pipeline} nodeSize={this.nodeSize} key={key} />;
       return (
           <div>
             <h4>Run: {this.getParams().runId}</h4>
-            <PipelineGraph graph={this.state.graph} targetJobs={this.state.targetJobs} pipeline={this.state.pipeline} nodeSize={this.nodeSize} key={key} />
-            <RouteHandler />
+            {inside}  
           </div>
       );
     }
@@ -146,7 +145,7 @@
           var graph = this.props.graph;
           var graphNodes = graph.nodes().map(function (nodename) {
             var node = graph.node(nodename);
-            return (<PipelineNode node={node} key={nodename} jobs={this.props.targetJobs[nodename]} retries={this.props.pipeline.retries} target={nodename} />);
+            return (<PipelineTarget node={node} key={nodename} jobs={this.props.targetJobs[nodename]} retries={this.props.pipeline.retries} target={nodename} />);
           }, this);
 
           var graphEdges = graph.edges().map(function (e) {
@@ -173,7 +172,8 @@
       }
   });
 
-  var PipelineNode = React.createClass({
+  var PipelineTarget = React.createClass({
+    mixins: [Router.State],
     getStatus: function() {
       // return unstarted, started, succeeded, failed or unknown
 
@@ -220,10 +220,36 @@
     render: function() {
       var failCount = _.filter(this.props.jobs, function(job) {return job.end_time!==null && job.succeeded==false;}).length || '';
       var status = this.getStatus();
+
+      // React freaks out with SVG namespaced attributes like <a xlink:href="...">.
+      // Work around that with dangerouslySetInnerHTML.
+      // See https://github.com/facebook/react/issues/2250
+      var gProps = {};
+      var params = this.getParams();
+
+      // We'd normally use a <Link> component from React Router to generate 
+      // <a> tags for us, but since we have to build our own SVG <a> tag, we'll
+      // pull the URL from a fake <Link> component rendered onto a throwaway DOM node.
+      var dummy = document.createElement('div');
+      params.target = this.props.target;
+      dummy.innerHTML = React.renderToString(<Link to="Target" params={params} />);
+      var url = dummy.getElementsByTagName('a')[0].getAttribute('href');
+
+      var html = '<a xlink:href="' + url + '">';
+      html += '<rect '
+      html += 'width="' + this.props.node.width + '" ';
+      html += 'height="' + this.props.node.height + '" ';
+      html += 'x="' + this.props.node.x + '" ';
+      html += 'y="' + this.props.node.y + '" ';
+      html += 'fill="transparent"></rect></a>';
+      gProps.dangerouslySetInnerHTML = {__html: html};
+      var linkRect = React.DOM.g(gProps);
+
       return (
         <g>
           <rect className={status} x={this.props.node.x} y={this.props.node.y} width={this.props.node.width} height={this.props.node.height} rx="1" ry="1" />
           <text className="failCount" x={this.props.node.x + 2} y={this.props.node.y + 28}>{failCount}</text>
+          {linkRect}
         </g>
       );
     }
@@ -247,7 +273,7 @@
       }
 
       return (
-        <path d={pointsToD(this.props.points)} fill="transparent" stroke-width="1" stroke="#ccc" />
+        <path d={pointsToD(this.props.points)} fill="transparent" strokeWidth="1" stroke="#ccc" />
       );
     }
   });

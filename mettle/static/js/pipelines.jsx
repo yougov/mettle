@@ -78,7 +78,6 @@
       var inside = this.getParams().runId ? <RouteHandler /> : <Mettle.components.RunsList serviceName={this.getParams().serviceName} pipelineName={this.getParams().pipelineName} />;
       return (
         <div>
-          <h3>Pipeline: {this.getParams().pipelineName}</h3>
           {inside}
         </div>
       );

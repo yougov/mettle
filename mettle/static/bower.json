@@ -17,10 +17,9 @@
     "react": "~0.12.2",
     "reconnectingWebsocket": "git@github.com:joewalnes/reconnecting-websocket.git",
     "superagent": "~0.21.0",
-    "bootstrap": "~3.3.4"
+    "pure": "~0.6.0"
   },
   "resolutions": {
-    "lodash": "~3.3.1",
-    "superagent": "~0.21.0"
+    "lodash": "~3.3.1"
   }
 }

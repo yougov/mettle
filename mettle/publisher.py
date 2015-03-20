@@ -17,6 +17,7 @@ import select
 from functools32 import lru_cache
 import pika
 import psycopg2
+from mettle_protocol import mq_escape
 
 from mettle.settings import get_settings
 from mettle.db import parse_pgurl
@@ -80,7 +81,8 @@ def data_to_routing_key(data):
     elif table == 'pipeline_runs_nacks':
         return '{service_name}.{pipeline_name}.{pipeline_run_id}.nacks.{id}'.format(**data)
     elif table == 'jobs':
-        return '{service_name}.{pipeline_name}.{pipeline_run_id}.jobs.{id}'.format(**data)
+        data['target'] = mq_escape(data['target'])
+        return '{service_name}.{pipeline_name}.{pipeline_run_id}.jobs.{target}.{id}'.format(**data)
     else:
         raise ValueError('Unknown table: %s' % table)
 

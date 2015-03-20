@@ -48,8 +48,16 @@
     return getRunsURL(serviceName, pipelineName) + runId + '/';
   };
 
-  var getJobsURL = function(serviceName, pipelineName, runId) {
+  var getRunJobsURL = function(serviceName, pipelineName, runId) {
     return getRunURL(serviceName, pipelineName, runId) + 'jobs/';
+  };
+
+  var getJobLogURL = function(serviceName, pipelineName, runId, jobId, tail) {
+    return getRunJobsURL(serviceName, pipelineName, runId) + jobId + '/logs/?tail=' + tail;
+  };
+
+  var getTargetJobsURL = function(serviceName, pipelineName, runId, target) {
+    return getRunURL(serviceName, pipelineName, runId) + 'targets/' + target + '/jobs/';
   };
 
   Mettle.getServices = function (cb) {
@@ -87,8 +95,23 @@
     return new ReconnectingWebSocket(getRunURL(serviceName, pipelineName, runId));
   };
 
-  Mettle.getJobsStream = function (serviceName, pipelineName, runId) {
-    return new ReconnectingWebSocket(WSPREFIX + getJobsURL(serviceName, pipelineName, runId));
+  Mettle.getRunJobsStream = function (serviceName, pipelineName, runId) {
+    return new ReconnectingWebSocket(WSPREFIX + getRunJobsURL(serviceName, pipelineName, runId));
+  };
+
+  Mettle.getTargetJobs = function(serviceName, pipelineName, runId, target, cb) {
+    var url = getTargetJobsURL(serviceName, pipelineName, runId, target);
+    return request.get(url, cb);
+  };
+
+  Mettle.getTargetJobsStream = function(serviceName, pipelineName, runId, target) {
+    var url = WSPREFIX + getTargetJobsURL(serviceName, pipelineName, runId, target);
+    return new ReconnectingWebSocket(url);
+  };
+
+  Mettle.getJobLogStream = function(serviceName, pipelineName, runId, jobId, tail) {
+    var url = WSPREFIX + getJobLogURL(serviceName, pipelineName, runId, jobId, tail); 
+      return new ReconnectingWebSocket(url);
   };
 
 })(window);

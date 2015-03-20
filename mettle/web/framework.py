@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
 import json
+import logging
 
 import gevent
+import pika
+import utc
 from werkzeug.routing import Map, Rule
 from werkzeug.wrappers import BaseRequest, BaseResponse
 from werkzeug.exceptions import (HTTPException, MethodNotAllowed,
                                  NotImplemented, NotFound)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class Request(BaseRequest):
@@ -31,7 +36,6 @@ class View(object):
         self.app = app
         self.request = req
         self.params = params
-        self.db = self.app.db # convenience
 
     def get(self):
         raise MethodNotAllowed()
@@ -40,17 +44,63 @@ class View(object):
     def head(self):
         return self.GET()
 
+    def cleanup(self):
+        pass
+
     def __call__(self, environ, start_response):
         if self.request.method not in self.allowed_methods:
             raise NotImplemented()
 
         if self.request.method == 'GET' and 'wsgi.websocket' in environ:
             self.ws = environ['wsgi.websocket']
-            self.websocket(**self.params)
+            self.ws.close_callbacks = [self.cleanup]
+
+            handler = self.websocket
         else:
             handler = getattr(self, self.request.method.lower())
-            resp = handler(**self.params)
-            return resp(environ, start_response)
+
+        resp = handler(**self.params)
+        return resp(environ, start_response)
+
+
+class ApiView(View):
+    def __init__(self, *args, **kwargs):
+        super(ApiView, self).__init__(*args, **kwargs)
+        self.db = self.app.db # convenience
+
+    def bind_queue_to_websocket(self, exchange, routing_key):
+        settings = self.app.settings
+        self.rabbit_conn = pika.BlockingConnection(pika.URLParameters(settings.rabbit_url))
+        channel = self.rabbit_conn.channel()
+
+        queue = channel.queue_declare(exclusive=True)
+        queue_name = queue.method.queue
+
+        logger.info('Rabbit socket on %s/%s' % (exchange, routing_key))
+        channel.exchange_declare(exchange=exchange, type='topic', durable=True)
+        channel.queue_bind(exchange=exchange,
+                           queue=queue_name,
+                           routing_key=routing_key)
+
+        def callback(ch, method, props, body):
+            self.ws.send(body)
+
+        channel.basic_consume(callback, no_ack=True, queue=queue_name)
+
+        last_ping = utc.now()
+        while True:
+            now = utc.now()
+            elapsed = (now - last_ping).total_seconds()
+            if elapsed > settings.websocket_ping_interval:
+                self.ws.send_frame('', self.ws.OPCODE_PING)
+                last_ping = now
+            self.rabbit_conn.process_data_events()
+
+    def cleanup(self):
+        self.db.close()
+        rabbit_conn = getattr(self, 'rabbit_conn', None)
+        if rabbit_conn:
+            rabbit_conn.close()
 
 
 class App(object):
@@ -70,7 +120,9 @@ class App(object):
             adapter = self.map.bind_to_environ(environ)
             view_name, params = adapter.match()
             view_cls = self.handlers[view_name]
-            resp = view_cls(self, req, params)
+            wsgi_app = view_cls(self, req, params)
         except HTTPException, e:
-            resp = e
-        return resp(environ, start_response)
+            wsgi_app = e
+        resp = wsgi_app(environ, start_response)
+
+        return resp

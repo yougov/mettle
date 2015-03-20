@@ -22,6 +22,8 @@ DEFAULTS = {
 
     # The RabbitMQ exchange where updates to Postgres tables are published.
     'state_exchange': 'mettle_state',
+
+    'websocket_ping_interval': 1,
 }
 
 
