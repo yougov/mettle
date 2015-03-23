@@ -29,7 +29,7 @@ setup_params = dict(
         'Werkzeug==0.10.1',
 
         # leave mettle-protocol and its dependencies loosely versioned.
-        'mettle-protocol>=1.0.0',
+        'mettle-protocol>=1.0.1',
         'pika',
         'utc',
     ],
