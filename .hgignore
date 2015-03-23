@@ -30,3 +30,6 @@ local_options.py
 node_modules
 mettle.egg-info/*
 mettle/static/bower/*
+mettle/static/.bower-cache/*
+mettle/static/.bower-registry/*
+mettle/static/.bower-tmp/*

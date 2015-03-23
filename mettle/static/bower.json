@@ -12,14 +12,14 @@
   ],
   "dependencies": {
     "dagre": "~0.7.1",
-    "lodash": "~3.3.1",
+    "lodash": "~3.5.0",
     "react-router": "~0.12.4",
     "react": "~0.12.2",
-    "reconnectingWebsocket": "git@github.com:joewalnes/reconnecting-websocket.git",
     "superagent": "~0.21.0",
-    "pure": "~0.6.0"
+    "pure": "~0.6.0",
+    "reconnectingWebsocket": "https://github.com/joewalnes/reconnecting-websocket.git#1.0.0"
   },
   "resolutions": {
-    "lodash": "~3.3.1"
+    "lodash": "~3.5.0"
   }
 }
