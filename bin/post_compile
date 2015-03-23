@@ -1,8 +1,11 @@
 #!/bin/bash
 
+echo "Installing node.js with nodeenv"
 nodeenv -p --prebuilt
 
+echo "Installing react-tools and bower with npm"
 npm install -g react-tools bower
 
+echo "Installing bower packages"
 cd mettle/static
 bower install
