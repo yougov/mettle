@@ -8,4 +8,4 @@ npm install -g react-tools bower
 
 echo "Installing bower packages"
 cd mettle/static
-bower install
+bower install --silent
