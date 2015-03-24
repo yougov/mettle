@@ -2,21 +2,6 @@
 https://yougov.kilnhg.com/Code/Repositories/Systems/yg-app-base-image/Files/README.md?rev=tip.
 SSH into it, and 'cd /vagrant/mettle'.
 
-2. Run ./dbsetup.sh
+2. mkvirtualenv mettle
 
-3. mkvirtualenv mettle
-
-4. pip install -r dev_requirements.txt
-
-5. Install Node.js into the virtualenv:
-
-  nodeenv -p --prebuilt
-
-6. Install JS tools into the virtualenv:
-
-  npm install -g react-tools bower
-
-7. Install frontend JS/CSS packages into the mettle/static/ folder:
-
-  cd mettle/static
-  bower install
+3. make dev
