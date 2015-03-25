@@ -1,4 +1,4 @@
 #!/bin/bash
 
 make mettle/static/bower
-make jsx
+make js
