@@ -69,7 +69,7 @@ dev: clean mettle/static/bower migrate
 $(JSX_DIR)/%.js: $(BIN)/jsx
 	jsx $(shell echo $@ | sed s/js$$/jsx/) > $@
 
-$(STATIC_DIR)/js/compiled.js: $(JSX_TARGETS)
+$(STATIC_DIR)/js/compiled.js: $(BIN)/uglifyjs $(JSX_TARGETS)
 	uglifyjs $(STATIC_DIR)/js/mettle.js $(JSX_TARGETS) -c -m > $@
 
 # shorthand
