@@ -328,6 +328,14 @@ class Job(Base):
             expires=expires,
         )
 
+    def get_queue(self, service_name):
+        if self.target_parameters is None:
+            return mp.service_queue_name(service_name)
+
+        return self.target_parameters.get('queue',
+                                          mp.service_queue_name(service_name)) 
+
+
 
 class JobLogLine(Base):
     __tablename__ = 'job_log_lines'

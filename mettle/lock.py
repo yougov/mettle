@@ -54,8 +54,7 @@ def lock_and_announce_job(db, rabbit, job):
             pipeline = run.pipeline
 
             service_name = pipeline.service.name
-            queue_name = job.target_parameters.get('queue',
-                                                   mp.service_queue_name(service_name))
+            queue_name = job.get_queue(service_name)
             mp.queue_job(
                 rabbit,
                 queue_name,
