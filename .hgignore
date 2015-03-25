@@ -34,3 +34,4 @@ mettle/static/.bower-cache/*
 mettle/static/.bower-registry/*
 mettle/static/.bower-tmp/*
 mettle/static/jsx/*.js
+mettle/static/js/compiled.js

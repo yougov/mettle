@@ -1,21 +1,29 @@
-.PHONY: dbsetup clean migrate dev
+.PHONY: dbsetup clean_files clean_rabbit clean migrate dev js
 
-PYPATH=$(shell dirname `which python`)
+# Both Python and Node programs will be put here.
+BIN=$(shell dirname `which python`)
 
-JSX_DIR=mettle/static/jsx
-JSX_TARGETS=$(shell find $(JSX_DIR) -name "*.jsx" | sed s/jsx$$/js/)
+STATIC_DIR=mettle/static
+JSX_DIR=$(STATIC_DIR)/jsx
+# Our React components have dependencies on each other.  This ordering is important.
+JSX_MODULES=jobs targets runs pipelines services app
+JSX_TARGETS=$(foreach module,$(JSX_MODULES),$(JSX_DIR)/$(module).js)
 
 dbsetup:
 	-psql -U postgres -c "drop database mettle"
 	psql -U postgres -c "create database mettle"
 
-clean: dbsetup
+clean_files:
 	-rm -rf mettle/static/jsx/.module-cache
 	-rm mettle/static/jsx/*js
 	-rm -rf mettle/static/bower
 	-rm -rf tmp/HawaiianPipeline/*
 	-rm -rf tmp/PepperoniPipeline/*
 	-rm -rf mettle/static/bower
+	-rm -rf $(STATIC_DIR)/js/compiled.js
+	-rm -rf $(JSX_TARGETS)
+
+clean_rabbit:
 	-scripts/rabbitmqadmin delete exchange name=mettle_announce_service
 	-scripts/rabbitmqadmin delete exchange name=mettle_announce_pipeline_run
 	-scripts/rabbitmqadmin delete exchange name=mettle_ack_pipeline_run
@@ -28,30 +36,41 @@ clean: dbsetup
 	-scripts/rabbitmqadmin delete queue name=mettle_dispatcher
 	-scripts/rabbitmqadmin delete queue name=mettle_job_logs
 
-$(PYPATH)/npm:
+clean: dbsetup clean_files clean_rabbit
+
+# By letting 'nodeenv' install node.js, it will be placed into the Python virtualenv.
+$(BIN)/npm:
 	pip install nodeenv
 	nodeenv -p --prebuilt
 
-$(PYPATH)/jsx: $(PYPATH)/npm
+$(BIN)/jsx: $(BIN)/npm
 	npm install -g react-tools
-	touch $(PYPATH)/jsx # Make 'make' realize this is new.
+	touch $(BIN)/jsx # Make 'make' realize this is new.
 
-$(PYPATH)/bower: $(PYPATH)/npm
+$(BIN)/bower: $(BIN)/npm
 	npm install -g bower
-	touch $(PYPATH)/bower
+	touch $(BIN)/bower
 
-mettle/static/bower: $(PYPATH)/bower
+$(BIN)/uglifyjs: $(BIN)/npm
+	npm install -g uglify-js
+	touch $(BIN)/uglifyjs
+
+mettle/static/bower: $(BIN)/bower
 	cd mettle/static; bower install --config.interactive=0
 
-$(PYPATH)/mettle:
+$(BIN)/mettle:
 	pip install -e . -i http://cheese.yougov.net
 
-migrate: $(PYPATH)/mettle
+migrate: $(BIN)/mettle
 	mettle migrate
 
 dev: clean mettle/static/bower migrate
 
-jsx: $(JSX_TARGETS)
-
-$(JSX_DIR)/%.js: $(PYPATH)/jsx
+$(JSX_DIR)/%.js: $(BIN)/jsx
 	jsx $(shell echo $@ | sed s/js$$/jsx/) > $@
+
+$(STATIC_DIR)/js/compiled.js: $(JSX_TARGETS)
+	uglifyjs $(STATIC_DIR)/js/mettle.js $(JSX_TARGETS) -c -m > $@
+
+# shorthand
+js: $(STATIC_DIR)/js/compiled.js
