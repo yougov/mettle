@@ -45,7 +45,7 @@ def on_pipeline_run_ack(settings, rabbit, db, data):
     if run.ack_time is None:
         run.ack_time = utc.now()
         run.targets = data['targets']
-        run.target_parameters = data['target_parameters']
+        run.target_parameters = data.get('target_parameters', {})
 
     if run.is_ended(db):
         if run.end_time is None:
