@@ -7,7 +7,8 @@ stub_notification_lists:
   - alejandro.rivera@yougov.com
   - fernando.gutierrez@yougov.com
 stub_services:
-- pizza
+  pizza:
+    pipeline_names: [pepperoni, hawaiian]
 stub_pipelines:
 - name: pepperoni
   crontab: "0 2 * * *"

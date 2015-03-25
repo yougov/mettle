@@ -49,13 +49,14 @@ def main():
     session = make_session_cls(settings.db_url)()
 
     services = {}
-    for service_name in settings.stub_services:
+    for service_name, service_data in settings.stub_services.items():
         service = session.query(Service).filter_by(name=service_name).first()
         if not service:
             logger.info('Making service %s' % service_name)
             service = Service(
                 name=service_name,
                 updated_by='datastub',
+                pipeline_names=service_data['pipeline_names'],
             )
             session.add(service)
         services[service.name] = service

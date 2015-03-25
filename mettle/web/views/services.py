@@ -19,8 +19,8 @@ def service_summary(service):
         name=service.name,
         description=service.description,
         updated_by=service.updated_by,
+        pipeline_names=service.pipeline_names,
         errors=[],
-        pipeline_count=0
     )
 
 class ServiceList(ApiView):

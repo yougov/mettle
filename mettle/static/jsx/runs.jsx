@@ -218,7 +218,7 @@
     },
 
     render: function() {
-      var failCount = _.filter(this.props.jobs, function(job) {return job.end_time!==null && job.succeeded==false;}).length || '';
+      var failCount = _.filter(this.props.jobs, function(job) {return job.end_time!==null && job.succeeded===false;}).length || '';
       var status = this.getStatus();
 
       // React freaks out with SVG namespaced attributes like <a xlink:href="...">.

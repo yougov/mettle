@@ -55,6 +55,8 @@ $(BIN)/uglifyjs: $(BIN)/npm
 	npm install -g uglify-js
 	touch $(BIN)/uglifyjs
 
+# This is slightly hacky.  mettle/static/bower is a folder, not a file, so Make
+# is never going to recognize it as already existing.
 mettle/static/bower: $(BIN)/bower
 	cd mettle/static; bower install --config.interactive=0
 
