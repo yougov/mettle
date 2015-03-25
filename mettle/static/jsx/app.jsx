@@ -27,7 +27,7 @@
             </li>);
           if (params.runId) {
             links.push(<li key={"run-" + params.runId}>
-              <Link to="PipelineRun" params={params}> Run: {params.runId}</Link>
+              <Link to="PipelineRun" params={params}> Run ID: {params.runId}</Link>
               </li>);
             if (params.target) {
               links.push(<li key={params.target}>
@@ -35,7 +35,7 @@
                 </li>);
               if (params.jobId) {
                 links.push(<li key={"job-" + params.jobId}>
-                    <Link to="Job" params={params}>Job: {params.jobId}</Link>
+                    <Link to="Job" params={params}>Job ID: {params.jobId}</Link>
                     </li>);
               }
             }
