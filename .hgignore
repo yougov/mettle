@@ -23,7 +23,7 @@ nosetests.xml
 *pep8.txt
 *pylint.txt
 .vagrant
-*settings*.yaml
+settings.yaml
 tmp/
 local_options.py
 node_modules

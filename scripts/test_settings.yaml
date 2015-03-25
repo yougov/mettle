@@ -1,0 +1,19 @@
+lookback_days: 1
+timer_sleep_secs: 10
+stub_notification_lists:
+- name: devs
+  recipients:
+  - brent.tubbs@yougov.com
+  - alejandro.rivera@yougov.com
+  - fernando.gutierrez@yougov.com
+stub_services:
+- pizza
+stub_pipelines:
+- name: pepperoni
+  crontab: "0 2 * * *"
+  service: pizza
+  notification_list: devs
+- name: hawaiian
+  crontab: "0 3 * * *"
+  service: pizza
+  notification_list: devs
