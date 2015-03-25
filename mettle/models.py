@@ -206,10 +206,12 @@ class PipelineRun(Base):
         return [t for t in self.targets if self.target_is_ready(db, t)]
 
     def make_job(self, db, target):
+        target_params = (self.target_parameters.get(target) if
+                         self.target_parameters else None)
         job = Job(
             pipeline_run=self,
             target=target,
-            target_parameters=self.target_parameters.get(target),
+            target_parameters=target_params,
         )
         db.add(job)
         try:
