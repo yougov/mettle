@@ -25,7 +25,6 @@ nosetests.xml
 .vagrant
 *settings*.yaml
 tmp/
-.env
 local_options.py
 node_modules
 mettle.egg-info/*
