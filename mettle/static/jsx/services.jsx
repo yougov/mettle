@@ -57,7 +57,8 @@
           <div className="pure-u-1-24"><div className="circle"></div></div>
           <div className="pure-u-12-24"><Link to="Service" params={{serviceName: service.name}}>{service.name}</Link></div>
           <div className="pure-u-7-24">{service.updated_by}</div>
-          <div className="pure-u-4-24">{service.pipeline_names.length} <div className="badge">{service.errors.length}</div></div>
+          <div className="pure-u-2-24">{service.pipeline_names.length}</div>
+          <div className="pure-u-2-24">{service.errors.length}</div>
         </div>
         );
       });
@@ -70,7 +71,8 @@
               <th className="pure-u-1-24"></th>
               <th className="pure-u-12-24">Name</th>
               <th className="pure-u-7-24">Updated By</th>
-              <th className="pure-u-4-24">Pipelines</th>
+              <th className="pure-u-2-24">Pipelines</th>
+              <th className="pure-u-2-24">Errors</th>
             </tr>
           </thead>
         </table>

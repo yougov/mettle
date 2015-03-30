@@ -231,9 +231,10 @@
       // <a> tags for us, but since we have to build our own SVG <a> tag, we'll
       // pull the URL from a fake <Link> component rendered onto a throwaway DOM node.
       var dummy = document.createElement('div');
-      params.target = this.props.target;
+      params.target = encodeURIComponent(this.props.target);
       dummy.innerHTML = React.renderToString(<Link to="Target" params={params} />);
       var url = dummy.getElementsByTagName('a')[0].getAttribute('href');
+      console.log('url', url);
 
       var html = '<a xlink:href="' + url + '">';
       html += '<rect '
@@ -336,7 +337,7 @@
     },
 
     render: function() {
-      var nodes = _.map(this.state.runs, function(data) {
+      var nodes = _.map(_.sortByOrder(this.state.runs, ['id'], [false]), function(data) {
         var params = {
           serviceName: this.props.serviceName,
           pipelineName: this.props.pipelineName,
