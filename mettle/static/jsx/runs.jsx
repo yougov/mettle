@@ -130,10 +130,10 @@
       var key = 'run_' + this.getParams().runId
       var inside = this.getParams().target ? <RouteHandler /> : <PipelineGraph graph={this.state.graph} targetJobs={this.state.targetJobs} pipeline={this.state.pipeline} nodeSize={this.nodeSize} key={key} />;
       return (
-          <div>
-            <h4>Run: {this.getParams().runId}</h4>
-            {inside}  
-          </div>
+      <div className="pure-u-1">
+        <h1 className="page-header"><Link to="App">Home</Link><Breadcrumbs /></h1>
+        {inside}
+      </div>
       );
     }
   });
@@ -248,7 +248,7 @@
       return (
         <g>
           <rect className={status} x={this.props.node.x} y={this.props.node.y} width={this.props.node.width} height={this.props.node.height} rx="1" ry="1" />
-          <text className="failCount" x={this.props.node.x + 2} y={this.props.node.y + 28}>{failCount}</text>
+          <text className="failCount" x={this.props.node.x + 10} y={this.props.node.y + 20}>{failCount}</text>
           {linkRect}
         </g>
       );
@@ -340,14 +340,39 @@
         var params = {
           serviceName: this.props.serviceName,
           pipelineName: this.props.pipelineName,
-          runId: data.id
+          runId: data.id,
+          createdTime: new Date(data.created_time).toLocaleString(),
+          ackTime: new Date(data.ack_time).toLocaleString(),
+          endTime: new Date(data.end_time).toLocaleString()
         };
         return (
-          <li key={"run-link-" + data.id}>
-            <Link to="PipelineRun" params={params}>{data.id}</Link>
-          </li>);
+          <div className={data.succeeded ? 'run pure-g' : 'run pure-g danger'} key={"run-link-" + data.id}>
+            <div className="pure-u-1-24"><div className="circle"></div></div>
+            <div className="pure-u-1-24"><Link to="PipelineRun" params={params}>{data.id}</Link></div>
+            <div className="pure-u-4-24">{data.started_by}</div>
+            <div className="pure-u-6-24">{params.createdTime}</div>
+            <div className="pure-u-6-24">{params.ackTime}</div>
+            <div className="pure-u-6-24">{params.endTime}</div>
+          </div>);
       }, this);
-      return (<ul>{nodes}</ul>);
+      return (
+      <div className="pure-u-1">
+        <h1 className="page-header"><Link to="App">Home</Link><Breadcrumbs /><span>Runs</span></h1>
+        <table className="table">
+          <thead>
+            <tr className="pure-g">
+              <th className="pure-u-1-24"></th>
+              <th className="pure-u-1-24">ID</th>
+              <th className="pure-u-4-24">Started By</th>
+              <th className="pure-u-6-24">Created</th>
+              <th className="pure-u-6-24">Ack Time</th>
+              <th className="pure-u-6-24">Ended</th>
+            </tr>
+          </thead>
+        </table>
+        {nodes}
+      </div>
+      );
     }
   });
 

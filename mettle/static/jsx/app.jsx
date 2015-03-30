@@ -51,10 +51,9 @@
     render: function () {
       var inside = this.getParams().serviceName ? <RouteHandler /> : <Mettle.components.ServicesList />;
       return (
-        <div>
-          <header  className="pure-u-1">
+        <div className="pure-u-1">
+          <header className="pure-u-1">
             <h1 className="title"><Link to="App">Mettle</Link></h1>
-            <Breadcrumbs />
           </header>
           {inside} 
         </div>

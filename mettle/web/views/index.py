@@ -16,6 +16,7 @@ JS_FILES = [
   'static/bower/react/react.js',
   'static/bower/react-router/build/global/ReactRouter.min.js',
   'static/bower/graphlib/dist/graphlib.core.js',
+  'static/bower/dagre/dist/dagre.core.js',
   'static/bower/reconnectingWebsocket/reconnecting-websocket.min.js',
   'static/bower/superagent/superagent.js'
 ]
