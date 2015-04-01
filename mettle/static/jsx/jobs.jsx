@@ -61,16 +61,37 @@
     },
 
     render: function() {
-      var nodes = _.map(this.state.jobs, function(job) {
+      var nodes = _.map(_.sortByOrder(this.state.jobs, ['id'], [false]), function(job) {
         var params = this.getParams();
         params['jobId'] = job.id;
+        params['createdTime'] = new Date(job.created_time).toLocaleString(),
+        params['startTime'] = new Date(job.start_time).toLocaleString(),
+        params['endTime'] = new Date(job.end_time).toLocaleString()
         return (
-          <li key={'job-link-' + job.id}>
-            <Link to="Job" params={params}>{job.id}</Link>
-          </li>
-          );
+          <div className={job.succeeded ? 'run pure-g' : 'run pure-g danger'} key={'job-link-' + job.id}>
+            <div className="pure-u-1-24"><div className="circle"></div></div>
+            <div className="pure-u-5-24"><Link to="Job" params={params}>{job.id}</Link></div>
+            <div className="pure-u-6-24">{params.createdTime}</div>
+            <div className="pure-u-6-24">{params.startTime}</div>
+            <div className="pure-u-6-24">{params.endTime}</div>
+          </div>);
       }, this);
-      return (<ul>{nodes}</ul>);
+      return (
+      <div className="pure-u-1">
+        <table className="table">
+          <thead>
+            <tr className="pure-g">
+              <th className="pure-u-1-24"></th>
+              <th className="pure-u-5-24">ID</th>
+              <th className="pure-u-6-24">Created</th>
+              <th className="pure-u-6-24">Started</th>
+              <th className="pure-u-6-24">Ended</th>
+            </tr>
+          </thead>
+        </table>
+        {nodes}
+      </div>
+      );
     }
   });
 
@@ -79,7 +100,14 @@
     render: function() {
       var params = this.getParams();
       return (<div>
-              {this.getParams().jobId}
+              <table className="table">
+                <thead>
+                  <tr className="pure-g">
+                    <th className="pure-u-1-24"></th>
+                    <th className="pure-u-23-24">Job Log</th>
+                  </tr>
+                </thead>
+              </table>
               <JobLog serviceName={params.serviceName} pipelineName={params.pipelineName} runId={params.runId} jobId={params.jobId} />
               </div>);
     }
@@ -131,9 +159,13 @@
     render: function() {
       var lines = _.sortBy(this.state.lines, 'line_num');
       var nodes = _.map(lines, function(line) {
-        return <li>{line.line_num + 1}: {line.msg}</li>;
+        return (
+          <div className='log pure-g'>
+            <div className="pure-u-1-24">{line.line_num + 1}</div>
+            <div className="pure-u-23-24">{line.msg}</div>
+          </div>);
       });
-      return <ul>{nodes}</ul>;
+      return <div className="pure-u-1">{nodes}</div>;
     }
   });
 })();
