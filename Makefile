@@ -38,6 +38,9 @@ clean_rabbit:
 
 clean: dbsetup clean_files clean_rabbit
 
+$(BIN)/bumpversion:
+	pip install bumpversion
+
 # By letting 'nodeenv' install node.js, it will be placed into the Python virtualenv.
 $(BIN)/npm:
 	pip install nodeenv
@@ -66,7 +69,7 @@ $(BIN)/mettle:
 migrate: $(BIN)/mettle
 	mettle migrate
 
-dev: clean mettle/static/bower migrate
+dev: clean mettle/static/bower migrate $(BIN)/bumpversion
 
 $(JSX_DIR)/%.js: $(BIN)/jsx
 	jsx $(shell echo $@ | sed s/js$$/jsx/) > $@
