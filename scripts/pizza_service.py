@@ -36,7 +36,7 @@ class PizzaPipeline(mp.Pipeline):
                 self.log("%s does not exist.  Creating." % target)
 
                 # Let's just randomly fail 10% of the time.
-                if random.random() < .1:
+                if random.random() < 0.1:
                     raise Exception("No one expects the Spanish Inquisition!")
                 filename = self._target_to_filename(target_time, target)
                 dirname = os.path.dirname(filename)

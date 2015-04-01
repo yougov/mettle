@@ -3,9 +3,12 @@ import os
 import yaml
 
 DEFAULTS = {
-    'timer_sleep_secs': 60,
     'db_url': 'postgresql://postgres@/mettle',
-    'rabbit_url': 'amqp://guest:guest@localhost:5672/%2f',
+
+    # new log messages within the last job_log_lookback_minutes will indicate
+    # that a job is still alive and kicking, even if it's past its expiration
+    # date.
+    'job_log_lookback_minutes': 10,
 
     # don't bother with pipeline runs older than this
     'lookback_days': 7,
@@ -13,16 +16,18 @@ DEFAULTS = {
     # delete logs older than this
     'max_log_days': 14,
 
-    # new log messages within the last job_log_lookback_minutes will indicate
-    # that a job is still alive and kicking, even if it's past its expiration
-    # date.
-    'job_log_lookback_minutes': 10,
+    'rabbit_url': 'amqp://guest:guest@localhost:5672/%2f',
 
-    'web_worker_timeout': 30,
+    # To enable sending of notification emails on pipeline failures, set this to
+    # a host:port string like "mymailserver.com:25"
+    'smtp_url': None,
+    'smtp_sender': ['Mettle Server', 'mettle@example.com'],
 
     # The RabbitMQ exchange where updates to Postgres tables are published.
     'state_exchange': 'mettle_state',
 
+    'timer_sleep_secs': 60,
+    'web_worker_timeout': 30,
     'websocket_ping_interval': 1,
 }
 

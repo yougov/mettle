@@ -12,7 +12,7 @@ from mettle.models import Pipeline, PipelineRun, Job, JobLogLine
 from mettle.settings import get_settings
 from mettle.db import make_session_cls
 from mettle.lock import lock_and_announce_run, lock_and_announce_job
-from mettle.email import email_pipeline_group
+from mettle.notify import notify_pipeline_group
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -133,7 +133,7 @@ def check_jobs(settings, db, rabbit):
                 target=job.target,
                 pipeline=pipeline.name,
             ))
-            email_pipeline_group(db, pipeline, subj, msg)
+            notify_pipeline_group(db, pipeline, subj, msg)
         else:
             # This expired job is no longer doing stuff.  As far as we can tell.
             job.end_time = now
@@ -155,13 +155,13 @@ def check_jobs(settings, db, rabbit):
                 # No more retries.  Send a failure notification
                 subj = "Job %s out of retries" % job.target
                 msg = """Job {target_time} {target}, from pipeline {pipeline} has
-                passed its expire time, is no longer emitting log output, and
+                passed its expire time, has not recently emitted log messages, and
                 has no retries remaining.  You should look into it.""".format(
                     target_time=job.pipeline_run.target_time.isoformat(),
                     target=job.target,
                     pipeline=pipeline.name,
                 )
-                email_pipeline_group(db, pipeline, subj, msg)
+                notify_pipeline_group(db, pipeline, subj, msg)
 
     # Handle jobs that haven't been acked.  They should be announced.  Any
     # expired ones have already been cleaned up by the time we get here.

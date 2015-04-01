@@ -157,6 +157,9 @@ class PipelineRun(Base):
             return False
         return all(self.target_is_ended(db, t) for t in self.targets)
 
+    def is_failed(self, db):
+        return any(self.target_is_failed(db, t) for t in self.targets)
+
     def all_targets_succeeded(self, db):
         return all(self.target_is_succeeded(db, t) for t in self.targets)
 
