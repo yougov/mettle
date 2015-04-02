@@ -11,6 +11,7 @@ from mettle.settings import get_settings
 from mettle.models import Service, Pipeline, PipelineRun, PipelineRunNack, Job
 from mettle.lock import lock_and_announce_job
 from mettle.db import make_session_cls
+from mettle.notify import notify_failed_run
 import mettle_protocol as mp
 
 
@@ -130,9 +131,15 @@ def on_job_end(settings, rabbit, db, data):
     # changes to the run.
     db.commit()
     if run.end_time is None and run.is_ended(db):
+        # Don't mess with the ordering of operations in here, or you'll confuse
+        # SQLAlchemy and the order of the Postgres NOTIFY events.
         if run.all_targets_succeeded(db):
             run.succeeded = True
+        elif run.is_failed(db):
+            notify_failed_run(db, run)
         run.end_time = end_time
+
+
 
 
 def main():

@@ -18,7 +18,8 @@ def notify_failed_run(db, run, subject=None, body=None):
         subject = "Pipeline %s has failed" % run.pipeline.name
 
     if body is None:
-        body = textwrap.dedent("""Pipeline {pipeline}, has ended with failures.
+        body = textwrap.dedent("""
+            Pipeline {pipeline}, has ended with failures.
             The numbers of attemps has reached the maximum retries allowed.
             Service name: {service}
             Pipeline name: {pipeline}

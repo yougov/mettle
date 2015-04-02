@@ -91,7 +91,6 @@ def check_pipelines(settings, db, rabbit):
                 notify_failed_run(db, run)
 
 
-
 def ensure_pipeline_run(db, pipeline, target_time):
     run = db.query(PipelineRun).filter(
         PipelineRun.pipeline==pipeline,
