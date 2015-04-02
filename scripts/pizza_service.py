@@ -36,7 +36,7 @@ class PizzaPipeline(mp.Pipeline):
                 self.log("%s does not exist.  Creating." % target)
 
                 # Let's just randomly fail 10% of the time.
-                if random.random() < .1:
+                if random.random() < .3:
                     raise Exception("No one expects the Spanish Inquisition!")
                 filename = self._target_to_filename(target_time, target)
                 dirname = os.path.dirname(filename)
@@ -44,7 +44,7 @@ class PizzaPipeline(mp.Pipeline):
                     os.makedirs(dirname)
                 with open(filename, 'w') as f:
                     # sleep some random amount of time from 1 to 5 seconds.
-                    time.sleep(random.randint(1, 5))
+                    #time.sleep(random.randint(1, 5))
                     f.write(target)
             return True
         except Exception as e:

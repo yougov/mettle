@@ -234,7 +234,6 @@
       params.target = encodeURIComponent(this.props.target);
       dummy.innerHTML = React.renderToString(<Link to="Target" params={params} />);
       var url = dummy.getElementsByTagName('a')[0].getAttribute('href');
-      console.log('url', url);
 
       var html = '<a xlink:href="' + url + '">';
       html += '<rect '
@@ -343,11 +342,12 @@
           pipelineName: this.props.pipelineName,
           runId: data.id,
           createdTime: new Date(data.created_time).toLocaleString(),
-          ackTime: new Date(data.ack_time).toLocaleString(),
-          endTime: new Date(data.end_time).toLocaleString()
+          ackTime: data.ack_time ? new Date(data.ack_time).toLocaleString() : '',
+          endTime: data.end_time ? new Date(data.end_time).toLocaleString() : ''
         };
+        console.log(params);
         return (
-          <div className={data.succeeded ? 'run pure-g' : 'run pure-g danger'} key={"run-link-" + data.id}>
+          <div className={data.end_time && !data.succeeded ? 'run pure-g danger' : 'run pure-g'} key={"run-link-" + data.id}>
             <div className="pure-u-1-24"><div className="circle"></div></div>
             <div className="pure-u-1-24"><Link to="PipelineRun" params={params}>{data.id}</Link></div>
             <div className="pure-u-4-24">{data.started_by}</div>

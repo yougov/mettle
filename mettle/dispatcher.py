@@ -130,14 +130,15 @@ def on_job_end(settings, rabbit, db, data):
     # Force the job update to be committed/published before we start making any
     # changes to the run.
     db.commit()
-    if run.end_time is None and run.is_ended(db):
-        # Don't mess with the ordering of operations in here, or you'll confuse
-        # SQLAlchemy and the order of the Postgres NOTIFY events.
-        if run.all_targets_succeeded(db):
-            run.succeeded = True
-        elif run.is_failed(db):
+
+    if run.end_time is None:
+        if run.target_is_failed(db, job.target):
             notify_failed_run(db, run)
-        run.end_time = end_time
+            run.end_time = end_time
+        elif run.is_ended(db):
+            if run.all_targets_succeeded(db):
+                run.succeeded = True
+            run.end_time = end_time
 
 
 

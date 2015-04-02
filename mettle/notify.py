@@ -19,15 +19,15 @@ def notify_failed_run(db, run, subject=None, body=None):
 
     if body is None:
         body = textwrap.dedent("""
-            Pipeline {pipeline}, has ended with failures.
-            The numbers of attemps has reached the maximum retries allowed.
+            Pipeline "{pipeline}" has ended with failures.
+            The numbers of attempts has reached the maximum retries allowed.
             Service name: {service}
             Pipeline name: {pipeline}
-            Run ID: {pipeline_id}
+            Run ID: {run_id}
             """.format(
+            service=run.pipeline.service.name,
             pipeline=run.pipeline.name,
-            pipeline_id=run.pipeline_id,
-            service=run.pipeline.service.name
+            run_id=run.id,
         ))
     send_email(to, subject, body)
 
