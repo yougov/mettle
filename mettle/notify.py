@@ -37,7 +37,7 @@ def send_email(to, subj, body):
 
     logger.info('Sending email "{subject}" to {recipients}.'.format(
         subject=subj,
-        recipients=', '.join(str(to)),
+        recipients=', '.join([str(x) for x in to]),
     ))
 
     if settings.smtp_url is not None:
