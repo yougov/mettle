@@ -107,12 +107,7 @@ class App(object):
     def __init__(self, urls, settings):
         self.urls = urls
         self.settings = settings
-        self.handlers = {}
-        self.rules = []
-        for pat, name, func in urls:
-            self.rules.append(Rule(pat, endpoint=name))
-            self.handlers[name] = func
-        self.map = Map(self.rules)
+        self.map, self.handlers = build_rules(urls)
 
     def __call__(self, environ, start_response):
         try:
@@ -126,3 +121,32 @@ class App(object):
         resp = wsgi_app(environ, start_response)
 
         return resp
+
+
+def build_rules(rules_tuples):
+    """
+    Given a list of tuples like this:
+
+    [
+        ('/', 'index', views.Index),
+        ('/hello/<name>/', 'hello', views.Hello),
+    ]
+
+    Return two things:
+        1. A Werkzeug Map object.
+        2. A dictionary mapping the names of the Werkzeug endpoints to view
+        classes.
+    """
+    handlers = {}
+    rules = []
+    for pat, name, view in rules_tuples:
+        rules.append(Rule(pat, endpoint=name))
+        handlers[name] = view
+    return Map(rules), handlers
+
+
+def reverse(rule_map, endpoint, values=None):
+    """ Given a rule map, and the name of one of our endpoints, and a dict of
+    parameter values, return a URL"""
+    adapter = rule_map.bind('')
+    return adapter.build(endpoint, values=values)

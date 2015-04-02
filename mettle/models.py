@@ -5,8 +5,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import (ARRAY, JSON)
-from sqlalchemy import (Column, Integer, Text, ForeignKey, DateTime, Boolean,
-                        func, CheckConstraint)
+from sqlalchemy import (Column, Integer, Text, ForeignKey, ForeignKeyConstraint,
+                        DateTime, Boolean, func, CheckConstraint)
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.sql.expression import text
 from sqlalchemy.orm import relationship, backref, validates
@@ -102,6 +102,7 @@ class Pipeline(Base):
 
     __table_args__ = (
         UniqueConstraint('name', 'service_id'),
+        UniqueConstraint('id', 'service_id'), # needed for composite FK
         CheckConstraint('crontab IS NOT NULL OR chained_from_id IS NOT NULL',
                         name='crontab_or_pipeline_check'),
         CheckConstraint('NOT (crontab IS NOT NULL AND chained_from_id IS NOT NULL)',
@@ -239,6 +240,7 @@ class PipelineRun(Base):
         # Can't have a end time without an ack time 
         CheckConstraint('NOT (end_time IS NOT NULL AND ack_time IS NULL)',
                         name='run_end_without_ack_check'),
+        UniqueConstraint('id', 'pipeline_id'), # needed for composite FK
     )
 
     def as_dict(self):
@@ -315,6 +317,7 @@ class Job(Base):
         # Can't have a start time without a expire time
         CheckConstraint('NOT (start_time IS NOT NULL AND expires IS NULL)',
                         name='job_start_without_expire_check'),
+        UniqueConstraint('id', 'pipeline_run_id'), # needed for composite FK
     )
 
     def as_dict(self):
@@ -354,7 +357,7 @@ class JobLogLine(Base):
     job = relationship("Job", backref=backref('job_log_lines',
                                               order_by=line_num))
     __table_args__ = (
-        Index('unique_log_line', 'job_id', 'line_num', unique=True),
+        UniqueConstraint('job_id', 'line_num'),
     )
 
     def as_dict(self):
@@ -389,3 +392,73 @@ class ChangeRecord(Base):
     who = Column(Text)
     old = Column(JSON)
     new = Column(JSON)
+
+
+class Notification(Base):
+    __tablename__ = 'notifications'
+    id = Column(Integer, primary_key=True)
+    created_time = Column(DateTime(timezone=True), nullable=False,
+                  server_default=func.now())
+
+    message = Column(Text, nullable=False)
+
+    acknowledged_by = Column(Text)
+    acknowledged_time = Column(DateTime(timezone=True))
+
+    # Notifications can be attached to services, pipelines, pipeline runs, or
+    # jobs.  If you attach to one of the more specific things (e.g. Job), then
+    # you must also specify the intermediate things (pipeline run, pipeline).  A
+    # foreign key constraint will prevent non-sensical links.
+
+    # Requiring the population of the intermediate FKs will make check
+    # constraints and queries on notifications much simpler.
+    service_id = Column(Integer, ForeignKey('services.id'), nullable=False)
+    pipeline_id = Column(Integer, ForeignKey('pipelines.id'))
+    pipeline_run_id = Column(Integer, ForeignKey('pipeline_runs.id'))
+    job_id = Column(Integer, ForeignKey('jobs.id'))
+
+
+
+    service = relationship("Service", backref=backref('notifications',
+                                                      order_by=created_time))
+    pipeline = relationship("Pipeline", backref=backref('notifications',
+                                                        order_by=created_time))
+    pipeline_run = relationship("PipelineRun", backref=backref('notifications',
+                                                               order_by=created_time))
+    job = relationship("Job", backref=backref('notifications',
+                                              order_by=created_time))
+    __table_args__ = (
+        # acknowledgement fields must be filled together.
+        CheckConstraint(
+            'NOT (acknowledged_by IS NOT NULL AND acknowledged_time IS NULL)',
+            name='notification_ack_time_check'
+        ),
+        CheckConstraint(
+            'NOT (acknowledged_time IS NOT NULL AND acknowledged_by IS NULL)',
+            name='notification_ack_by_check'
+        ),
+
+        # Must provide pipeline run if you provide job.
+        CheckConstraint('NOT (job_id IS NOT NULL AND pipeline_run_id IS NULL)',
+                        name='notification_job_check'),
+
+        # Must provide pipeline if you provide pipeline run.
+        CheckConstraint('NOT (pipeline_run_id IS NOT NULL AND pipeline_id IS NULL)',
+                        name='notification_run_check'),
+
+        # Don't need a check constraint on pipeline+service, since service is
+        # already NOT NULL
+
+        # Prevent service/pipeline mismatches
+        ForeignKeyConstraint(['service_id', 'pipeline_id'],
+                             ['pipelines.service_id', 'pipelines.id']),
+
+        # Prevent pipeline/run mismatches
+        ForeignKeyConstraint(['pipeline_id', 'pipeline_run_id'],
+                             ['pipeline_runs.pipeline_id', 'pipeline_runs.id']),
+
+        # Prevent run/job mismatches
+        ForeignKeyConstraint(['pipeline_run_id', 'job_id'],
+                             ['jobs.pipeline_run_id', 'jobs.id']),
+    )
+
