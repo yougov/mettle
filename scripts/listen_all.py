@@ -54,10 +54,12 @@ def main():
     queue = channel.queue_declare(exclusive=True)
     queue_name = queue.method.queue
 
+    routing_key = 'services.pizza.#.notifications'
+
     for exchange in exchanges:
         channel.queue_bind(exchange=exchange,
                            queue=queue_name,
-                           routing_key='#')
+                           routing_key=routing_key)
 
     for method, properties, body in channel.consume(queue=queue_name):
         payload = json.loads(body)

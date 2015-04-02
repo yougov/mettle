@@ -16,7 +16,7 @@ class RunList(ApiView):
     def websocket(self, service_name, pipeline_name):
         settings = self.app.settings
         exchange = settings['state_exchange']
-        routing_key = '%s.%s.*' % (service_name, pipeline_name)
+        routing_key = 'services.%s.pipelines.%s.runs.*' % (service_name, pipeline_name)
         self.bind_queue_to_websocket(exchange, routing_key)
 
 
@@ -36,7 +36,7 @@ class RunDetails(ApiView):
     def websocket(self, service_name, pipeline_name, run_id):
         settings = self.app.settings
         exchange = settings['state_exchange']
-        routing_key = '%s.%s.%s' % (service_name, pipeline_name, run_id)
+        routing_key = 'services.%s.pipelines.%s.runs.%s' % (service_name, pipeline_name, run_id)
         self.bind_queue_to_websocket(exchange, routing_key)
 
 
@@ -58,9 +58,8 @@ class RunJobs(ApiView):
     def websocket(self, service_name, pipeline_name, run_id):
         settings = self.app.settings
         exchange = settings['state_exchange']
-        routing_key = '%s.%s.%s.jobs.*.*' % (service_name,
-                                              pipeline_name,
-                                              run_id)
+        routing_key = ('services.%s.pipelines.%s.runs.%s.targets.*.jobs.*' %
+                       (service_name, pipeline_name, run_id))
         self.bind_queue_to_websocket(exchange, routing_key)
 
 
@@ -83,7 +82,7 @@ class RunNacks(ApiView):
     def websocket(self, service_name, pipeline_name, run_id):
         settings = self.app.settings
         exchange = settings['state_exchange']
-        routing_key = '%s.%s.%s.nacks.*' % (service_name, pipeline_name, run_id)
+        routing_key = 'services.%s.pipelines.%s.runs.%s.nacks.*' % (service_name, pipeline_name, run_id)
         self.bind_queue_to_websocket(exchange, routing_key)
 
 

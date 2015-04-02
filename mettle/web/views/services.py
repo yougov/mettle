@@ -37,7 +37,7 @@ class ServiceList(ApiView):
         # which will be all changes to rows in the services table.  See
         # publisher.py for more details on how the routing key works on this
         # exchange.
-        routing_key = '*'
+        routing_key = 'services.*'
         self.bind_queue_to_websocket(exchange, routing_key)
 
 
@@ -49,7 +49,7 @@ class ServiceDetail(ApiView):
     def websocket(self, service_name):
         settings = self.app.settings
         exchange = settings['state_exchange']
-        routing_key = service_name
+        routing_key = 'services.' + service_name
         for msg in state_message_stream(settings.rabbit_url, exchange,
                                         routing_key):
             self.ws.send(msg)

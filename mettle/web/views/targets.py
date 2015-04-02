@@ -24,9 +24,7 @@ class TargetJobs(ApiView):
     def websocket(self, service_name, pipeline_name, run_id, target):
         settings = self.app.settings
         exchange = settings['state_exchange']
-        routing_key = '%s.%s.%s.jobs.%s.*' % (service_name,
-                                              pipeline_name,
-                                              run_id,
-                                              target)
+        routing_key = ('services.%s.pipelines.%s.runs.%s.targets.%s.jobs.*' %
+                       (service_name, pipeline_name, run_id, target))
         self.bind_queue_to_websocket(exchange, routing_key)
 

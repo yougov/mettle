@@ -422,11 +422,14 @@ class Notification(Base):
     service = relationship("Service", backref=backref('notifications',
                                                       order_by=created_time))
     pipeline = relationship("Pipeline", backref=backref('notifications',
-                                                        order_by=created_time))
+                                                        order_by=created_time),
+                           foreign_keys=[pipeline_id])
     pipeline_run = relationship("PipelineRun", backref=backref('notifications',
-                                                               order_by=created_time))
+                                                               order_by=created_time),
+                               foreign_keys=[pipeline_run_id])
     job = relationship("Job", backref=backref('notifications',
-                                              order_by=created_time))
+                                              order_by=created_time),
+                       foreign_keys=[job_id])
     __table_args__ = (
         # acknowledgement fields must be filled together.
         CheckConstraint(
@@ -461,4 +464,3 @@ class Notification(Base):
         ForeignKeyConstraint(['pipeline_run_id', 'job_id'],
                              ['jobs.pipeline_run_id', 'jobs.id']),
     )
-

@@ -72,17 +72,35 @@ def main():
 
 def data_to_routing_key(data):
     table = data['tablename']
-    if table == 'services':
-        return data['name']
-    elif table == 'pipelines':
-        return '{service_name}.{name}'.format(**data)
-    elif table == 'pipeline_runs':
-        return '{service_name}.{pipeline_name}.{id}'.format(**data)
-    elif table == 'pipeline_runs_nacks':
-        return '{service_name}.{pipeline_name}.{pipeline_run_id}.nacks.{id}'.format(**data)
-    elif table == 'jobs':
+    if data.get('job_id'):
         data['target'] = mq_escape(data['target'])
-        return '{service_name}.{pipeline_name}.{pipeline_run_id}.jobs.{target}.{id}'.format(**data)
+
+    if table == 'services':
+        return 'services.{name}'.format(**data)
+    elif table == 'pipelines':
+        return 'services.{service_name}.pipelines.{name}'.format(**data)
+    elif table == 'pipeline_runs':
+        return 'services.{service_name}.pipelines.{pipeline_name}.runs.{id}'.format(**data)
+    elif table == 'pipeline_runs_nacks':
+        return ('services.{service_name}'
+                '.pipelines.{pipeline_name}'
+                '.runs.{pipeline_run_id}'
+                '.nacks.{id}').format(**data)
+    elif table == 'jobs':
+        return ('services.{service_name}'
+                '.pipelines.{pipeline_name}'
+                '.runs.{pipeline_run_id}'
+                '.targets.{target}'
+                '.jobs.{id}').format(**data)
+    elif table == 'notifications':
+        routing_key = 'services.{service_name}'
+        if data.get('pipeline_name'):
+            routing_key += '.pipelines.{pipeline_name}'
+        if data.get('pipeline_run_id'):
+            routing_key += '.runs.{pipeline_run_id}'
+        if data.get('job_id'):
+            routing_key += '.targets.{target}.jobs.{job_id}'
+        return routing_key.format(**data) + '.notifications'
     else:
         raise ValueError('Unknown table: %s' % table)
 
@@ -116,6 +134,7 @@ def extra_data(cur, table, id):
         'pipeline_runs': extra_pipeline_run_data,
         'pipeline_runs_nacks': extra_pipeline_run_nack_data,
         'jobs': extra_job_data,
+        'notifications': extra_notification_data,
     }
     func = table_funcs.get(table, lambda x, y: {})
     return func(cur, id)
@@ -183,4 +202,40 @@ def extra_job_data(cur, id):
     return {
         'service_name': row[0],
         'pipeline_name': row[1],
+    }
+
+def extra_notification_data(cur, id):
+    q_notification = """
+    SELECT services.name, pipeline_id, job_id
+    FROM notifications
+    JOIN services
+        ON notifications.service_id=services.id
+    WHERE notifications.id=%s;"""
+    cur.execute(q_notification, (id,))
+    notification_row = cur.fetchone()
+    service_name, pipeline_id, job_id = notification_row
+    if pipeline_id is not None:
+        q_pipeline = """
+        SELECT name
+        FROM pipelines
+        WHERE id=%s;"""
+        cur.execute(q_pipeline, (pipeline_id,))
+        pipeline_name = cur.fetchone()[0]
+    else:
+        pipeline_name = None
+
+    if job_id is not None:
+        q_job = """
+        SELECT target
+        FROM jobs
+        WHERE id=%s;"""
+        cur.execute(q_job, (job_id,))
+        target = cur.fetchone()[0]
+    else:
+        target = None
+
+    return {
+        'service_name': service_name,
+        'pipeline_name': pipeline_name,
+        'target': target,
     }
