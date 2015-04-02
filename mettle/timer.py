@@ -12,7 +12,7 @@ from mettle.models import Pipeline, PipelineRun, Job, JobLogLine
 from mettle.settings import get_settings
 from mettle.db import make_session_cls
 from mettle.lock import lock_and_announce_run, lock_and_announce_job
-from mettle.notify import notify_pipeline_group
+from mettle.notify import notify_failed_run
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -88,19 +88,7 @@ def check_pipelines(settings, db, rabbit):
                 run.succeeded = True
             elif run.is_failed(db):
                 # Job has ended with failure (attemps reach the maximum retries allowed)
-                run.end_time=now
-                subj = "Pipeline %s has failed" % run.pipeline.name
-                msg = """Pipeline {pipeline}, has ended with failures. 
-                    The numbers of attemps has reached the maximum retries allowed.
-                    Service name: {service}
-                    Pipeline name: {pipeline}
-                    Run ID: {pipeline_id}
-                    """.format(
-                    pipeline=run.pipeline.name,
-                    pipeline_id=run.pipeline_id,
-                    service=run.pipeline.service.name
-                )
-                notify_pipeline_group(db, pipeline, subj, msg)
+                notify_failed_run(db, run)
 
 
 
@@ -149,7 +137,7 @@ def check_jobs(settings, db, rabbit):
                 target=job.target,
                 pipeline=pipeline.name,
             ))
-            notify_pipeline_group(db, pipeline, subj, msg)
+            notify_failed_run(db, job.pipeline_run, subj, msg)
         else:
             # This expired job is no longer doing stuff.  As far as we can tell.
             job.end_time = now
@@ -177,7 +165,7 @@ def check_jobs(settings, db, rabbit):
                     target=job.target,
                     pipeline=pipeline.name,
                 )
-                notify_pipeline_group(db, pipeline, subj, msg)
+                notify_failed_run(db, job.pipeline_run, subj, msg)
 
     # Handle jobs that haven't been acked.  They should be announced.  Any
     # expired ones have already been cleaned up by the time we get here.

@@ -3,16 +3,39 @@ import smtplib
 import email.utils
 from email.mime.text import MIMEText
 import urlparse
+import textwrap
 
 from mettle.settings import get_settings
+from mettle.models import Notification
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def notify_pipeline_group(db, pipeline, subject, body):
-    to = pipeline.notification_list.recipients
+def notify_failed_run(db, run, subject=None, body=None):
+    to = run.pipeline.notification_list.recipients
+    if subject is None:
+        subject = "Pipeline %s has failed" % run.pipeline.name
+
+    if body is None:
+        body = textwrap.dedent("""Pipeline {pipeline}, has ended with failures.
+            The numbers of attemps has reached the maximum retries allowed.
+            Service name: {service}
+            Pipeline name: {pipeline}
+            Run ID: {pipeline_id}
+            """.format(
+            pipeline=run.pipeline.name,
+            pipeline_id=run.pipeline_id,
+            service=run.pipeline.service.name
+        ))
     send_email(to, subject, body)
+
+    db.add(Notification(
+        pipeline_run=run,
+        pipeline=run.pipeline,
+        service=run.pipeline.service,
+        message=body,
+    ))
 
 
 def send_email(to, subj, body):
