@@ -86,6 +86,22 @@ def check_pipelines(settings, db, rabbit):
             run.end_time=now
             if run.all_targets_succeeded(db):
                 run.succeeded = True
+        elif run.is_failed(db):
+            # Job has ended with failure (attemps reach the maximum retries allowed)
+            run.end_time=now
+            subj = "Pipeline %s has failed" % run.pipeline.name
+            msg = """Pipeline {pipeline}, has ended with failures. 
+                The numbers of attemps has reached the maximum retries allowed.
+                Service name: {service}
+                Pipeline name: {pipeline}
+                Run ID: {pipeline_id}
+                """.format(
+                pipeline=run.pipeline.name,
+                pipeline_id=run.pipeline_id,
+                service=run.pipeline.service.name
+            )
+            notify_pipeline_group(db, pipeline, subj, msg)
+
 
 
 def ensure_pipeline_run(db, pipeline, target_time):
