@@ -64,4 +64,4 @@ class Log(ApiView):
             '*', # target
             str(job_id),
         ])
-        self.bind_queue_to_websocket(mp.JOB_LOGS_EXCHANGE, routing_key)
+        self.bind_queue_to_websocket(mp.JOB_LOGS_EXCHANGE, [routing_key])

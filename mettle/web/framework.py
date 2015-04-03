@@ -68,7 +68,10 @@ class ApiView(View):
         super(ApiView, self).__init__(*args, **kwargs)
         self.db = self.app.db # convenience
 
-    def bind_queue_to_websocket(self, exchange, routing_key):
+    def on_rabbit_message(self, ch, method, props, body):
+        self.ws.send(body)
+
+    def bind_queue_to_websocket(self, exchange, routing_keys):
         settings = self.app.settings
         self.rabbit_conn = pika.BlockingConnection(pika.URLParameters(settings.rabbit_url))
         channel = self.rabbit_conn.channel()
@@ -76,16 +79,15 @@ class ApiView(View):
         queue = channel.queue_declare(exclusive=True)
         queue_name = queue.method.queue
 
-        logger.info('Rabbit socket on %s/%s' % (exchange, routing_key))
+        logger.info('Rabbit socket on %s/%s' % (exchange, routing_keys))
         channel.exchange_declare(exchange=exchange, type='topic', durable=True)
-        channel.queue_bind(exchange=exchange,
-                           queue=queue_name,
-                           routing_key=routing_key)
 
-        def callback(ch, method, props, body):
-            self.ws.send(body)
+        for rk in routing_keys:
+            channel.queue_bind(exchange=exchange,
+                               queue=queue_name,
+                               routing_key=rk)
 
-        channel.basic_consume(callback, no_ack=True, queue=queue_name)
+        channel.basic_consume(self.on_rabbit_message, no_ack=True, queue=queue_name)
 
         last_ping = utc.now()
         while True:

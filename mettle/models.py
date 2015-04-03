@@ -1,3 +1,4 @@
+import datetime
 import logging
 from collections import OrderedDict
 
@@ -33,6 +34,9 @@ class Service(Base):
     # TODO: once all services have this field filled in, update this to
     # nullable=False, and create a migration to match.
     pipeline_names = Column(ARRAY(Text))
+
+    notifications = relationship("Notification", lazy='dynamic',
+                                 backref=backref('service'))
 
     @validates('name')
     def validate_name(self, key, name):
@@ -83,6 +87,12 @@ class Pipeline(Base):
     chained_from = relationship(lambda: Pipeline, remote_side=id,
                                 backref='chains_to')
 
+    def next_run_time(self):
+        if self.crontab is None:
+            return None
+        schedule = croniter(self.crontab, utc.now())
+        return schedule.get_next(datetime.datetime)
+
     @validates('name')
     def validate_name(self, key, name):
         # Ensure that the name has no characters that have special meanings in
@@ -123,6 +133,7 @@ class Pipeline(Base):
             retries=self.retries,
             crontab=self.crontab,
             chained_from_id=self.chained_from_id,
+            next_run_time = self.next_run_time().isoformat(),
         )
 
 
@@ -417,10 +428,6 @@ class Notification(Base):
     pipeline_run_id = Column(Integer, ForeignKey('pipeline_runs.id'))
     job_id = Column(Integer, ForeignKey('jobs.id'))
 
-
-
-    service = relationship("Service", backref=backref('notifications',
-                                                      order_by=created_time))
     pipeline = relationship("Pipeline", backref=backref('notifications',
                                                         order_by=created_time),
                            foreign_keys=[pipeline_id])
@@ -430,6 +437,24 @@ class Notification(Base):
     job = relationship("Job", backref=backref('notifications',
                                               order_by=created_time),
                        foreign_keys=[job_id])
+
+    def as_dict(self):
+        return {
+            'id': self.id,
+            'created_time': self.created_time.isoformat(),
+            'message': self.message,
+            'acknowledged_by': self.acknowledged_by,
+            'acknowledged_time': (self.acknowledged_time.isoformat() if
+                                  self.acknowledged_time else None),
+            'service_id': self.service_id,
+            'service_name': self.service.name if self.service else None,
+            'pipeline_id': self.pipeline_id,
+            'pipeline_name': self.pipeline.name if self.pipeline else None,
+            'pipeline_run_id': self.pipeline_run_id,
+            'job_id': self.job_id,
+            'target': self.job.target if self.job else None,
+        }
+
     __table_args__ = (
         # acknowledgement fields must be filled together.
         CheckConstraint(

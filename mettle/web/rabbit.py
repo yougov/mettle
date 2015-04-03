@@ -22,5 +22,3 @@ def state_message_stream(rabbit_url, exchange, routing_key):
                        routing_key=routing_key)
 
     return connection, channel, channel.consume(queue=queue_name, no_ack=True)
-
-

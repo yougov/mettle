@@ -20,7 +20,7 @@ class PipelineList(ApiView):
         # See publisher.py for more details on how the routing key works on this
         # exchange.
         routing_key = 'services.%s.pipelines.*' % service_name
-        self.bind_queue_to_websocket(exchange, routing_key)
+        self.bind_queue_to_websocket(exchange, [routing_key])
 
 
 class PipelineDetails(ApiView):
