@@ -10,7 +10,7 @@ class RunList(ApiView):
         service = self.db.query(Service).filter_by(name=service_name).one()
         pipeline = self.db.query(Pipeline).filter_by(service=service,
                                                       name=pipeline_name).one()
-        runs = self.db.query(PipelineRun).filter_by(pipeline=pipeline)
+        runs = self.db.query(PipelineRun).filter_by(pipeline=pipeline).order_by('-pipeline_runs.id')
         return JSONResponse(dict(objects=[r.as_dict() for r in runs]))
 
     def websocket(self, service_name, pipeline_name):

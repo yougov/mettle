@@ -345,7 +345,7 @@
           ackTime: data.ack_time ? new Date(data.ack_time).toLocaleString() : '',
           endTime: data.end_time ? new Date(data.end_time).toLocaleString() : ''
         };
-        console.log(params);
+
         return (
           <div className={data.end_time && !data.succeeded ? 'run pure-g danger' : 'run pure-g'} key={"run-link-" + data.id}>
             <div className="pure-u-1-24"><div className="circle"></div></div>

@@ -53,12 +53,12 @@
     render: function () {
       var services = _.map(this.state.services, function(service) {
         return (
-        <div className={service.errors.length==0 ? 'service pure-g' : 'service pure-g danger'} key={'service-'+service.name}>
+        <div className={Object.size(service.notifications)==0 ? 'service pure-g' : 'service pure-g danger'} key={'service-'+service.name}>
           <div className="pure-u-1-24"><div className="circle"></div></div>
           <div className="pure-u-12-24"><Link to="Service" params={{serviceName: service.name}}>{service.name}</Link></div>
-          <div className="pure-u-7-24">{service.updated_by}</div>
+          <div className="pure-u-6-24">{service.updated_by}</div>
           <div className="pure-u-2-24">{service.pipeline_names.length}</div>
-          <div className="pure-u-2-24">{service.errors.length}</div>
+          <div className="pure-u-3-24">{Object.size(service.notifications)}</div>
         </div>
         );
       });
@@ -70,9 +70,9 @@
             <tr className="pure-g">
               <th className="pure-u-1-24"></th>
               <th className="pure-u-12-24">Name</th>
-              <th className="pure-u-7-24">Updated By</th>
+              <th className="pure-u-6-24">Updated By</th>
               <th className="pure-u-2-24">Pipelines</th>
-              <th className="pure-u-2-24">Errors</th>
+              <th className="pure-u-3-24">Notifications</th>
             </tr>
           </thead>
         </table>

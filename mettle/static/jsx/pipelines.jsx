@@ -62,13 +62,20 @@
 
     render: function() {
       var nodes = _.map(this.state.pipelines, function(data, name) {
+        var params = {
+          newRunTime: new Date(data.next_run_time).toLocaleString()
+        }
+
         return (
           <div className="pipeline pure-g" key={"pipeline-link-" + name}>
             <div className="pure-u-1-24"><div className="circle"></div></div>
-            <div className="pure-u-12-24"><Link to="Pipeline" params={{serviceName: this.props.serviceName, pipelineName: data.name}}>{name}</Link></div>
+            <div className="pure-u-6-24"><Link to="Pipeline" params={{serviceName: this.props.serviceName, pipelineName: data.name}}>{name}</Link></div>
             <div className="pure-u-6-24">{data.updated_by}</div>
             <div className="pure-u-3-24">{data.crontab}</div>
             <div className="pure-u-2-24">{data.retries}</div>
+            <div className="pure-u-2-24"></div>
+            <div className="pure-u-2-24">{params.newRunTime}</div>
+            <div className="pure-u-2-24"></div>
           </div>);
       }, this);
       return (
@@ -78,10 +85,13 @@
           <thead>
             <tr className="pure-g">
               <th className="pure-u-1-24"></th>
-              <th className="pure-u-12-24">Name</th>
+              <th className="pure-u-6-24">Name</th>
               <th className="pure-u-6-24">Updated By</th>
               <th className="pure-u-3-24">Crontab</th>
               <th className="pure-u-2-24">Retries</th>
+              <th className="pure-u-2-24">Last Run (Start)</th>
+              <th className="pure-u-2-24">Next Run</th>
+              <th className="pure-u-2-24">Last Run (End)</th>
             </tr>
           </thead>
         </table>
