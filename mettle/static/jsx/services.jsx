@@ -52,6 +52,7 @@
 
     render: function () {
       var services = _.map(this.state.services, function(service) {
+        if(!service.pipeline_names) service.pipeline_names = [];
         return (
         <div className={Object.size(service.notifications)==0 ? 'service pure-g' : 'service pure-g danger'} key={'service-'+service.name}>
           <div className="pure-u-1-24"><div className="circle"></div></div>
