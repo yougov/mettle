@@ -44,7 +44,7 @@ class PizzaPipeline(mp.Pipeline):
                     os.makedirs(dirname)
                 with open(filename, 'w') as f:
                     # sleep some random amount of time from 1 to 5 seconds.
-                    #time.sleep(random.randint(1, 5))
+                    time.sleep(random.randint(1, 5))
                     f.write(target)
             return True
         except Exception as e:

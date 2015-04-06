@@ -1,4 +1,4 @@
-lookback_days: 7
+lookback_days: 1
 timer_sleep_secs: 10
 stub_notification_lists:
 - name: devs

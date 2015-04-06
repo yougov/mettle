@@ -77,7 +77,6 @@ if 'app' not in globals():
         '/static': ('mettle', 'static')
     })
 
-
 if __name__ == "__main__":
     server = pywsgi.WSGIServer(('', int(os.getenv('PORT', 8000))), app,
                                handler_class=WebSocketHandler)

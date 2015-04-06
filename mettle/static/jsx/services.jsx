@@ -57,7 +57,7 @@
           <div className="pure-u-1-24"><div className="circle"></div></div>
           <div className="pure-u-12-24"><Link to="Service" params={{serviceName: service.name}}>{service.name}</Link></div>
           <div className="pure-u-6-24">{service.updated_by}</div>
-          <div className="pure-u-2-24">{service.pipeline_names.length}</div>
+          <div className="pure-u-2-24">{service.pipeline_names ? service.pipeline_names.length : 0}</div>
           <div className="pure-u-3-24">{Object.size(service.notifications)}</div>
         </div>
         );

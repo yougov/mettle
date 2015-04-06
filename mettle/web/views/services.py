@@ -59,7 +59,11 @@ class ServiceList(ApiView):
         parsed = json.loads(body)
         if parsed['tablename'] == 'services':
             service_name = parsed['name']
-            self.services[service_name].update(parsed)
+            if service_name not in self.services:
+                self.services[service_name] = parsed
+                # TODO: get any notifications
+            else:
+                self.services[service_name].update(parsed)
         elif parsed['tablename'] == 'notifications':
             service_name = parsed['service_name']
             self.services[service_name]['notifications'][parsed['id']] = parsed
