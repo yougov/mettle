@@ -54,7 +54,7 @@ def main():
     queue = channel.queue_declare(exclusive=True)
     queue_name = queue.method.queue
 
-    routing_key = 'services.pizza.#.notifications'
+    routing_key = '#'
 
     for exchange in exchanges:
         channel.queue_bind(exchange=exchange,
