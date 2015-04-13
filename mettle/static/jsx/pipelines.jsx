@@ -63,6 +63,7 @@
     render: function() {
       var nodes = _.map(this.state.pipelines, function(data, name) {
         var params = {
+          lastScheduledRunTime: new Date(data.last_run_time).toLocaleString(),
           newRunTime: new Date(data.next_run_time).toLocaleString()
         }
 
@@ -73,9 +74,9 @@
             <div className="pure-u-6-24">{data.updated_by}</div>
             <div className="pure-u-3-24">{data.crontab}</div>
             <div className="pure-u-2-24">{data.retries}</div>
+            <div className="pure-u-2-24">{params.lastScheduledRunTime}</div>
             <div className="pure-u-2-24"></div>
             <div className="pure-u-2-24">{params.newRunTime}</div>
-            <div className="pure-u-2-24"></div>
           </div>);
       }, this);
       return (
@@ -89,9 +90,9 @@
               <th className="pure-u-6-24">Updated By</th>
               <th className="pure-u-3-24">Crontab</th>
               <th className="pure-u-2-24">Retries</th>
-              <th className="pure-u-2-24">Last Run (Start)</th>
+              <th className="pure-u-2-24">Last Run<br /><small>Scheduled</small></th>
+              <th className="pure-u-2-24">Last Run<br /><small>End</small></th>
               <th className="pure-u-2-24">Next Run</th>
-              <th className="pure-u-2-24">Last Run (End)</th>
             </tr>
           </thead>
         </table>

@@ -93,6 +93,13 @@ class Pipeline(Base):
         schedule = croniter(self.crontab, utc.now())
         return schedule.get_next(datetime.datetime)
 
+    def last_run_time(self):
+        if self.crontab is None:
+            return None
+        #runs = db.query(PipelineRun).filter_by(pipeline=self).order_by('-pipeline_runs.id')
+        schedule = croniter(self.crontab, utc.now())
+        return schedule.get_prev(datetime.datetime)
+
     @validates('name')
     def validate_name(self, key, name):
         # Ensure that the name has no characters that have special meanings in
@@ -133,7 +140,8 @@ class Pipeline(Base):
             retries=self.retries,
             crontab=self.crontab,
             chained_from_id=self.chained_from_id,
-            next_run_time = self.next_run_time().isoformat(),
+            next_run_time=self.next_run_time().isoformat(),
+            last_run_time=self.last_run_time().isoformat(),
         )
 
 
