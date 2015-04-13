@@ -87,6 +87,9 @@ class Pipeline(Base):
     chained_from = relationship(lambda: Pipeline, remote_side=id,
                                 backref='chains_to')
 
+    runs = relationship("PipelineRun", lazy='dynamic',
+                                 backref=backref('pipelines'))
+
     def next_run_time(self):
         if self.crontab is None:
             return None
@@ -96,7 +99,6 @@ class Pipeline(Base):
     def last_run_time(self):
         if self.crontab is None:
             return None
-        #runs = db.query(PipelineRun).filter_by(pipeline=self).order_by('-pipeline_runs.id')
         schedule = croniter(self.crontab, utc.now())
         return schedule.get_prev(datetime.datetime)
 
