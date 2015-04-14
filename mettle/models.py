@@ -96,10 +96,9 @@ class Pipeline(Base):
         return schedule.get_next(datetime.datetime)
 
     def last_run_time(self):
-        if self.crontab is None:
-            return None
-        schedule = croniter(self.crontab, utc.now())
-        return schedule.get_prev(datetime.datetime)
+        last_run = self.runs.order_by(PipelineRun.target_time.desc()).first()
+        if last_run:
+            return last_run.target_time
 
     @validates('name')
     def validate_name(self, key, name):
@@ -131,6 +130,8 @@ class Pipeline(Base):
         return 'Pipeline <%s>' % self.name
 
     def as_dict(self):
+        next_time = self.next_run_time()
+        last_time = self.last_run_time()
         return OrderedDict(
             id=self.id,
             name=self.name,
@@ -141,8 +142,8 @@ class Pipeline(Base):
             retries=self.retries,
             crontab=self.crontab,
             chained_from_id=self.chained_from_id,
-            next_run_time=self.next_run_time().isoformat(),
-            last_run_time=self.last_run_time().isoformat(),
+            next_run_time=next_time.isoformat() if next_time else None,
+            last_run_time=last_time.isoformat() if last_time else None,
         )
 
 
