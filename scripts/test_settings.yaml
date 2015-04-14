@@ -9,6 +9,8 @@ stub_notification_lists:
 stub_services:
   pizza:
     pipeline_names: [pepperoni, hawaiian]
+  sun:
+    pipeline_names: [sunrise, sunset]
 stub_pipelines:
 - name: pepperoni
   crontab: "0 2 * * *"
@@ -17,4 +19,12 @@ stub_pipelines:
 - name: hawaiian
   crontab: "0 3 * * *"
   service: pizza
+  notification_list: devs
+- name: sunrise
+  crontab: "0 6 * * *"
+  service: sun
+  notification_list: devs
+- name: sunset
+  chained_from: sunrise
+  service: sun
   notification_list: devs

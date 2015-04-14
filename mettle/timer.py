@@ -7,6 +7,7 @@ import utc
 from croniter import croniter
 import pika
 from mettle_protocol import declare_exchanges
+from sqlalchemy.orm import aliased
 
 from mettle.models import Pipeline, PipelineRun, Job, JobLogLine
 from mettle.settings import get_settings
@@ -35,21 +36,55 @@ class crontimes(croniter):
 def check_pipelines(settings, db, rabbit):
     logger.info("Checking pipelines.")
 
-    pipelines = db.query(Pipeline).filter(
+    scheduled_pipelines = db.query(Pipeline).filter(
         Pipeline.active==True,
         Pipeline.crontab!=None,
+        Pipeline.chained_from==None,
     )
 
-    # Create new pipeline runs.  For each active pipeline, look back up to
-    # lookback_days, and see which pipeline runs it should have created.
+    # Create any needed pipeline runs for pipelines with a crontab
     now = utc.now()
     start = now - timedelta(days=settings.lookback_days)
-    for pipeline in pipelines:
+    for pipeline in scheduled_pipelines:
         for target_time in crontimes(pipeline.crontab, start):
             if target_time < now:
                 ensure_pipeline_run(db, pipeline, target_time)
             else:
                 break
+
+    # Create any needed pipeline runs for pipelines that are chained to other
+    # pipelines.
+    chained_pipelines = db.query(Pipeline).filter(
+        Pipeline.active==True,
+    ).join(Pipeline.chained_from, aliased=True).filter(
+        Pipeline.active==True,
+    )
+
+    for pipeline in chained_pipelines:
+        # get successful parent runs within lookback_days
+        parent_runs = db.query(PipelineRun).filter(
+            PipelineRun.pipeline==pipeline.chained_from,
+            PipelineRun.target_time>=now - timedelta(days=settings.lookback_days),
+            PipelineRun.succeeded==True,
+        )
+
+        for pr in parent_runs:
+            chained_runs = db.query(PipelineRun).filter(
+                PipelineRun.pipeline==pipeline,
+                PipelineRun.chained_from_id==pr.id,
+            )
+            if chained_runs.count() == 0:
+                logger.info("Chaining run of pipeline %s from %s for "
+                            "target time %s" % (pipeline.name, pr.pipeline.name,
+                                                pr.target_time.isoformat()))
+                db.add(PipelineRun(
+                    pipeline=pipeline,
+                    target_time=pr.target_time,
+                    started_by='timer',
+                    chained_from_id=pr.id,
+                ))
+
+    db.commit()
 
     # Now announce all unacked pipeline runs, whether created by this timer or
     # by someone manually, or by the dispatcher (using a trigger off some other

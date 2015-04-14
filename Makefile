@@ -17,8 +17,7 @@ clean_files:
 	-rm -rf mettle/static/jsx/.module-cache
 	-rm mettle/static/jsx/*js
 	-rm -rf mettle/static/bower
-	-rm -rf tmp/HawaiianPipeline/*
-	-rm -rf tmp/PepperoniPipeline/*
+	-rm -rf tmp/*Pipeline/*
 	-rm -rf mettle/static/bower
 	-rm -rf $(STATIC_DIR)/js/compiled.js
 	-rm -rf $(JSX_TARGETS)
@@ -33,6 +32,7 @@ clean_rabbit:
 	-scripts/rabbitmqadmin delete exchange name=mettle_job_logs
 	-scripts/rabbitmqadmin delete exchange name=mettle_state	
 	-scripts/rabbitmqadmin delete queue name=etl_service_pizza
+	-scripts/rabbitmqadmin delete queue name=etl_service_sun
 	-scripts/rabbitmqadmin delete queue name=mettle_dispatcher
 	-scripts/rabbitmqadmin delete queue name=mettle_job_logs
 

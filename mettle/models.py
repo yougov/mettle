@@ -84,12 +84,11 @@ class Pipeline(Base):
     # A pipeline must have either a crontab or a trigger pipeline, but not both.
     crontab = Column(Text)
     chained_from_id = Column(Integer, ForeignKey('pipelines.id'))
-    chained_from = relationship(lambda: Pipeline, remote_side=id,
-                                backref='chains_to')
+    chained_from = relationship("Pipeline", remote_side=id, backref='chains_to')
 
     def next_run_time(self):
-        if self.crontab is None:
-            return None
+        if self.chained_from:
+            return self.chained_from.next_run_time()
         schedule = croniter(self.crontab, utc.now())
         return schedule.get_next(datetime.datetime)
 
@@ -148,6 +147,8 @@ class PipelineRun(Base):
                        server_default=text('false'))
     started_by = Column(Text, nullable=False) # username or 'timer'
 
+    chained_from_id = Column(Integer, ForeignKey('pipeline_runs.id'))
+
     # These fields are set when we get an ack from the ETL service
     ack_time = Column(DateTime(timezone=True))
     targets = Column(MutableDict.as_mutable(JSON), default={})
@@ -158,6 +159,9 @@ class PipelineRun(Base):
 
     pipeline = relationship("Pipeline", backref=backref('pipeline_runs',
                                                         order_by=created_time))
+
+    chained_from = relationship("PipelineRun", backref=backref('chains_to'),
+                               remote_side=id)
 
     def get_announce_time(self):
         if self.nacks:
@@ -245,6 +249,11 @@ class PipelineRun(Base):
     __table_args__ = (
         Index('unique_run_in_progress', pipeline_id, target_time,
               postgresql_where=end_time==None, unique=True),
+
+        # Prevent duplicate runs of the same pipeline chained from the same
+        # previous pipeline.
+        Index('unique_run_chained_from', pipeline_id, chained_from_id,
+              unique=True),
         # Can't have a ack time without targets, even if it's an empty list
         CheckConstraint('NOT (ack_time IS NOT NULL AND targets IS NULL)',
                         name='run_ack_without_targets_check'),

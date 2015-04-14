@@ -78,7 +78,7 @@ def main():
         nl.recipients = nl_data['recipients']
         nl_lists[nl.name] = nl
 
-    pipelines = []
+    pipelines = {}
     for pl_data in settings.stub_pipelines:
         pipeline = session.query(Pipeline).filter_by(
             name=pl_data['name'],
@@ -92,10 +92,13 @@ def main():
                 service=services[pl_data['service']],
                 updated_by='datastub',
             )
-            session.add(pipeline)
-        pipeline.crontab = pl_data['crontab']
+        if 'crontab' in pl_data:
+            pipeline.crontab = pl_data['crontab']
+        elif 'chained_from' in pl_data:
+            pipeline.chained_from=pipelines[pl_data['chained_from']]
+        session.add(pipeline)
         pipeline.notification_list = nl_lists[pl_data['notification_list']]
-        pipelines.append(pl_data['name'])
+        pipelines[pl_data['name']] = pipeline
 
     # query for all pipelines.  any not in the data stub should be made
     # inactive.
