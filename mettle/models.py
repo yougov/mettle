@@ -86,11 +86,20 @@ class Pipeline(Base):
     chained_from_id = Column(Integer, ForeignKey('pipelines.id'))
     chained_from = relationship("Pipeline", remote_side=id, backref='chains_to')
 
+    runs = relationship("PipelineRun", lazy='dynamic',
+                                 backref=backref('pipelines'))
+
     def next_run_time(self):
         if self.chained_from:
             return self.chained_from.next_run_time()
         schedule = croniter(self.crontab, utc.now())
         return schedule.get_next(datetime.datetime)
+
+    def last_run_time(self):
+        if self.crontab is None:
+            return None
+        schedule = croniter(self.crontab, utc.now())
+        return schedule.get_prev(datetime.datetime)
 
     @validates('name')
     def validate_name(self, key, name):
@@ -132,7 +141,8 @@ class Pipeline(Base):
             retries=self.retries,
             crontab=self.crontab,
             chained_from_id=self.chained_from_id,
-            next_run_time = self.next_run_time().isoformat(),
+            next_run_time=self.next_run_time().isoformat(),
+            last_run_time=self.last_run_time().isoformat(),
         )
 
 

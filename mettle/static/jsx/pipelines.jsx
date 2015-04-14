@@ -62,8 +62,13 @@
 
     render: function() {
       var nodes = _.map(this.state.pipelines, function(data, name) {
-        var params = {
-          newRunTime: new Date(data.next_run_time).toLocaleString()
+        var run_id, params = {
+          newRunTime: new Date(data.next_run_time).toLocaleString(),
+          lastRunTime: null
+        }
+        if(Object.keys(data['runs']).length > 0) {
+          run_id = Object.keys(data['runs'])[0];
+          params['lastRunTime'] = data['runs'][run_id].end_time ? new Date(data['runs'][run_id].end_time).toLocaleString() : null
         }
 
         return (
@@ -73,9 +78,8 @@
             <div className="pure-u-6-24">{data.updated_by}</div>
             <div className="pure-u-3-24">{data.crontab}</div>
             <div className="pure-u-2-24">{data.retries}</div>
-            <div className="pure-u-2-24"></div>
+            <div className="pure-u-2-24">{params.lastRunTime}</div>
             <div className="pure-u-2-24">{params.newRunTime}</div>
-            <div className="pure-u-2-24"></div>
           </div>);
       }, this);
       return (
@@ -89,9 +93,8 @@
               <th className="pure-u-6-24">Updated By</th>
               <th className="pure-u-3-24">Crontab</th>
               <th className="pure-u-2-24">Retries</th>
-              <th className="pure-u-2-24">Last Run (Start)</th>
+              <th className="pure-u-2-24">Last Run</th>
               <th className="pure-u-2-24">Next Run</th>
-              <th className="pure-u-2-24">Last Run (End)</th>
             </tr>
           </thead>
         </table>

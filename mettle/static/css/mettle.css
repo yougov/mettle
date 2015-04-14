@@ -73,6 +73,10 @@ h1, h2, h3, h4, h5, h6 {
   font-family: "RobotoThin", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
+small {
+  font-size: 80%;
+}
+
 /* HEADER */
 
 #content {
