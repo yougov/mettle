@@ -1,6 +1,20 @@
 import os
+import random
+import string
 
 import yaml
+
+
+def random_secret(n=64):
+    """
+    Generate a random key to use for signing sessions.  This is only useful for
+    dev mode.  If you try to use this in production, then sessions will be
+    invalidated every time the server restarts, and if you load balance between
+    multiple processes, each will think the other's sessions are invalid.
+    """
+    chars = string.ascii_letters + string.digits
+    return ''.join([random.choice(chars) for x in xrange(n)])
+
 
 DEFAULTS = {
     'db_url': 'postgresql://postgres@/mettle',
@@ -29,7 +43,26 @@ DEFAULTS = {
     'timer_sleep_secs': 60,
     'web_worker_timeout': 30,
     'websocket_ping_interval': 1,
+
+    # a list of wsgi middleware classes that should be used to wrap the app, and
+    # their config dicts.
+
+    # YOU MUST override this setting in production to provide your own session
+    # key.
+    'wsgi_middlewares': [
+        ('beaker.middleware.SessionMiddleware', {
+            'session.type': 'cookie',
+            'session.cookie_expires': True,
+            'session.key': 'mettle_session',
+            'session.validate_key': random_secret(),
+            # allow running locally without https
+            'session.secure': False,
+        }),
+    ]
 }
+
+
+
 
 
 class AttrDict(dict):

@@ -9,6 +9,8 @@ from werkzeug.routing import Map, Rule
 from werkzeug.wrappers import BaseRequest, BaseResponse
 from werkzeug.exceptions import (HTTPException, MethodNotAllowed,
                                  NotImplemented, NotFound)
+from gwebsocket.exceptions import SocketDeadError
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -53,7 +55,7 @@ class View(object):
 
         if self.request.method == 'GET' and 'wsgi.websocket' in environ:
             self.ws = environ['wsgi.websocket']
-            self.ws.close_callbacks = [self.cleanup]
+            self.ws.add_close_callback(self.cleanup)
 
             handler = self.websocket
         else:

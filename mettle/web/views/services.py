@@ -2,7 +2,6 @@ import logging
 import json
 
 from sqlalchemy.sql.expression import func
-from geventwebsocket.websocket import WebSocket
 import pika
 import utc
 
@@ -28,6 +27,7 @@ def service_summary(service, notifications=None):
         data['notifications'] = {n.id: n.as_dict() for n in notifications}
     return data
 
+
 class ServiceList(ApiView):
     def get_services(self):
         services = self.db.query(Service).order_by(func.lower(Service.name)).all()
@@ -37,10 +37,11 @@ class ServiceList(ApiView):
         ]
 
     def get(self):
+        import ipdb; ipdb.set_trace()
         return JSONResponse(dict( objects=self.get_services()))
 
     def websocket(self):
-        # keyed by service nam
+        # keyed by service name
         self.services = {s['name']: s for s in self.get_services()}
 
         exchange = self.app.settings['state_exchange']
