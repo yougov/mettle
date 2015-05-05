@@ -17,7 +17,7 @@ setup_params = dict(
     # Dependency versions are intentionally pinned to prevent surprises at
     # deploy time.  The world is not yet safely semver.
     install_requires=[
-        'beaker==1.6.4',
+        'Beaker==1.6.4',
         'croniter==0.3.5',
         'functools32==3.2.3-1',
         'gevent==1.0.1',

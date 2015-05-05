@@ -26,7 +26,7 @@ def main():
         level=logging.INFO,
     )
 
-    host = 'localhost'
+    host = '127.0.0.1'
     vhost = '/'
     exchanges = [
         'mettle_state',
