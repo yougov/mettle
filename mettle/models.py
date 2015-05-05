@@ -268,7 +268,7 @@ class PipelineRun(Base):
         # Can't have a ack time without targets, even if it's an empty list
         CheckConstraint('NOT (ack_time IS NOT NULL AND targets IS NULL)',
                         name='run_ack_without_targets_check'),
-        # Can't have a end time without an ack time 
+        # Can't have a end time without an ack time
         CheckConstraint('NOT (end_time IS NOT NULL AND ack_time IS NULL)',
                         name='run_end_without_ack_check'),
         UniqueConstraint('id', 'pipeline_id'), # needed for composite FK
@@ -372,7 +372,7 @@ class Job(Base):
             return mp.service_queue_name(service_name)
 
         return self.target_parameters.get('queue',
-                                          mp.service_queue_name(service_name)) 
+                                          mp.service_queue_name(service_name))
 
 
 
@@ -449,7 +449,8 @@ class Notification(Base):
     job_id = Column(Integer, ForeignKey('jobs.id'))
 
     pipeline = relationship("Pipeline", backref=backref('notifications',
-                                                        order_by=created_time),
+                                                        order_by=created_time,
+                                                        lazy='dynamic'),
                            foreign_keys=[pipeline_id])
     pipeline_run = relationship("PipelineRun", backref=backref('notifications',
                                                                order_by=created_time),

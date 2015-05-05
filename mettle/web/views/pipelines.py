@@ -5,7 +5,7 @@ from mettle.web.framework import JSONResponse, ApiView
 from mettle.web.rabbit import state_message_stream
 
 
-def pipeline_summary(pipeline, runs=None):
+def pipeline_summary(pipeline, runs=None, notifications=None):
     data = dict(
         id=pipeline.id,
         name=pipeline.name,
@@ -30,7 +30,10 @@ def pipeline_summary(pipeline, runs=None):
             )
             for r in runs
         }
+    if notifications is not None:
+        data['notifications'] = {n.id: n.as_dict() for n in notifications}
     return data
+
 
 class PipelineList(ApiView):
     def get_pipelines(self, service_name):
@@ -41,7 +44,8 @@ class PipelineList(ApiView):
         return [
             pipeline_summary(p, p.runs.filter(PipelineRun.pipeline_id==p.id,
                                               PipelineRun.end_time!=None)
-                                      .order_by('-pipeline_runs.id'))
+                                      .order_by('-pipeline_runs.id'),
+                             p.notifications.filter_by(acknowledged_by=None))
             for p in pipelines
         ]
 

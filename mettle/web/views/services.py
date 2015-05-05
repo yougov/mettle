@@ -73,7 +73,9 @@ class ServiceList(ApiView):
 class ServiceDetail(ApiView):
     def get(self, service_name):
         service = self.db.query(Service).filter_by(name=service_name).one()
-        return JSONResponse(service_summary(service))
+        summary = service_summary(
+            service, service.notifications.filter_by(acknowledged_by=None))
+        return JSONResponse(summary)
 
     def websocket(self, service_name):
         settings = self.app.settings

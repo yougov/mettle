@@ -72,12 +72,13 @@
         }
 
         return (
-          <div className="pipeline pure-g" key={"pipeline-link-" + name}>
+          <div className={Object.size(data.notifications)==0 ? 'pipeline pure-g' : 'pipeline pure-g danger'} key={"pipeline-link-" + name}>
             <div className="pure-u-1-24"><div className="circle"></div></div>
             <div className="pure-u-6-24"><Link to="Pipeline" params={{serviceName: this.props.serviceName, pipelineName: data.name}}>{name}</Link></div>
             <div className="pure-u-6-24">{data.updated_by}</div>
             <div className="pure-u-3-24">{data.crontab}</div>
             <div className="pure-u-2-24">{data.retries}</div>
+            <div className="pure-u-2-24">{Object.size(data.notifications)}</div>
             <div className="pure-u-2-24">{params.lastRunTime}</div>
             <div className="pure-u-2-24">{params.newRunTime}</div>
           </div>);
@@ -93,6 +94,7 @@
               <th className="pure-u-6-24">Updated By</th>
               <th className="pure-u-3-24">Crontab</th>
               <th className="pure-u-2-24">Retries</th>
+              <th className="pure-u-2-24">Notifications</th>
               <th className="pure-u-2-24">Last Run</th>
               <th className="pure-u-2-24">Next Run</th>
             </tr>

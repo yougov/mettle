@@ -1,4 +1,4 @@
-(function() {
+ (function() {
   var Router = ReactRouter;
   var Link = Router.Link;
   var RouteHandler = Router.RouteHandler;
