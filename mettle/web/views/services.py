@@ -37,7 +37,6 @@ class ServiceList(ApiView):
         ]
 
     def get(self):
-        import ipdb; ipdb.set_trace()
         return JSONResponse(dict( objects=self.get_services()))
 
     def websocket(self):

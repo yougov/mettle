@@ -47,14 +47,22 @@ DEFAULTS = {
     # a list of wsgi middleware classes that should be used to wrap the app, and
     # their config dicts.
 
+    # Middlewares will be instantiated in order, so the last one wraps the
+    # second-to-last one, etc.  This means that at request time, they're
+    # executed in reverse order.
+
     # YOU MUST override this setting in production to provide your own session
     # key.
     'wsgi_middlewares': [
+        ('mettle.web.middlewares.DummyAuthMiddleware', {
+            'username': 'test_user',
+        }),
         ('beaker.middleware.SessionMiddleware', {
             'session.type': 'cookie',
             'session.cookie_expires': True,
             'session.key': 'mettle_session',
             'session.validate_key': random_secret(),
+            'session.auto': True,
             # allow running locally without https
             'session.secure': False,
         }),
