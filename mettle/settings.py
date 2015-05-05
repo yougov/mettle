@@ -30,7 +30,7 @@ DEFAULTS = {
     # delete logs older than this
     'max_log_days': 14,
 
-    'rabbit_url': 'amqp://guest:guest@localhost:5672/%2f',
+    'rabbit_url': 'amqp://guest:guest@127.0.0.1:5672/%2f',
 
     # To enable sending of notification emails on pipeline failures, set this to
     # a host:port string like "mymailserver.com:25"

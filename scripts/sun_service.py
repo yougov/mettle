@@ -95,7 +95,7 @@ def main():
     with open(os.environ['APP_SETTINGS_YAML'], 'rb') as f:
         settings = yaml.safe_load(f)
     rabbit_url = settings.get('rabbit_url',
-                              'amqp://guest:guest@localhost:5672/%2f')
+                              'amqp://guest:guest@127.0.0.1:5672/%2f')
     pipelines = {
         'sunrise': SunrisePipeline,
         'sunset': SunsetPipeline,
