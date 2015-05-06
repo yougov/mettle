@@ -21,7 +21,7 @@ setup_params = dict(
         'croniter==0.3.5',
         'functools32==3.2.3-1',
         'gevent==1.0.1',
-        'gwebsocket>=0.9.4',
+        'gwebsocket==0.9.6',
         'gunicorn==19.1.1',
         'psycogreen==1.0',
         'psycopg2==2.5.4',

@@ -50,7 +50,7 @@ class MettleApplication(Application):
         """
         return {
             'bind': '0.0.0.0:%s' % os.getenv('PORT', 8000),
-            'worker_class': 'gwebsocket.gunicorn.GeventWebSocketWorker',
+            'worker_class': 'gwebsocket.gunicorn.GWebSocketWorker',
             'timeout': self.settings.web_worker_timeout,
             'accesslog': '-',
         }
