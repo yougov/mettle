@@ -9,52 +9,41 @@ from mettle.web.framework import App
 from mettle.settings import get_settings
 from mettle.db import make_session_cls
 from mettle.web.views import (logs, examples, services, pipelines, runs,
-                              targets, index)
+                              targets, index, notifications)
 
 
 routes = [
     # The one view that returns HTML.  Everything else is JSON API.
     ('/', 'index', index.Index),
 
-    # Show all services
+    # Services
     ('/api/services/', 'service_list', services.ServiceList),
-
-    # Details on one service. 
     ('/api/services/<service_name>/', 'service_detail', services.ServiceDetail),
+    ('/api/services/<service_name>/notifications/', 'service_notifications',
+     notifications.ByService),
 
-    # Summary for each pipeline in a service
+
+    # Pipelines
     ('/api/services/<service_name>/pipelines/', 'pipeline_list',
      pipelines.PipelineList),
-
-    # Details for a pipeline
     ('/api/services/<service_name>/pipelines/<pipeline_name>/',
      'pipeline_detail', pipelines.PipelineDetails),
 
-    # List of runs for a pipeline
+    # Runs
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/',
      'run_list', runs.RunList),
-
-    # Details for a pipeline run
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/',
      'run_detail', runs.RunDetails),
-
-    # Logs for a pipeline run.
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/logs/',
      'run_logs', logs.Log),
 
-    # Show all jobs in a run
+    # Jobs
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/jobs/',
      'run_job_list', runs.RunJobs),
-
-    # Show a job in a run, by job ID
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/jobs/<int:job_id>/',
      'run_job_detail', runs.RunJob),
-
-    # All log lines for a given job.
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/jobs/<int:job_id>/logs/',
      'run_job_logs', logs.Log),
-
-    # Show all jobs in a run for a given target
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/targets/<target>/jobs/',
      'target_job_list', targets.TargetJobs),
 

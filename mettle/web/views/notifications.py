@@ -37,6 +37,9 @@ class NotificationView(ApiView):
         for n in ns:
             self.ws.send(json.dumps(n.as_dict()))
 
+        self.bind_queue_to_websocket('mettle_state',
+                                     [self.get_routing_key(**kwargs)])
+
 
 class ByService(NotificationView):
     def get_notifications(self, service_name):
@@ -46,6 +49,9 @@ class ByService(NotificationView):
         )
 
         return self.filter_acknowledged(ns)
+
+    def get_routing_key(self, service_name):
+        return 'services.{service_name}.#.notifications'.format(service_name=service_name)
 
 
 class ByPipeline(NotificationView):
