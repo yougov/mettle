@@ -68,6 +68,12 @@ class ByPipeline(NotificationView):
 
         return self.filter_acknowledged(ns)
 
+    def get_routing_key(self, service_name, pipeline_name):
+        return 'services.{service_name}.pipelines.{pipeline_name}.#.notifications'.format(
+            service_name=service_name,
+            pipeline_name=pipeline_name
+        )
+
 
 class ByRun(NotificationView):
     def get_notifications(self, service_name, pipeline_name, run_id):
@@ -85,3 +91,10 @@ class ByRun(NotificationView):
         )
 
         return self.filter_acknowledged(ns)
+
+    def get_routing_key(self, service_name, pipeline_name, run_id):
+        return 'services.{service_name}.pipelines.{pipeline_name}.runs.{run_id}.#.notifications'.format(
+            service_name=service_name,
+            pipeline_name=pipeline_name,
+            run_id=run_id
+        )

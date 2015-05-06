@@ -125,4 +125,16 @@
       return new ReconnectingWebSocket(url);
   };
 
+  Mettle.getNotificationStream = function(serviceName, pipelineName, runId) {
+    var url = WSPREFIX + getServicesURL(serviceName);
+    if (pipelineName !== undefined) {
+      url += '/pipelines/' + pipelineName;
+      if (runId !== undefined) {
+        url += '/runs/' + runId;
+      }
+    }
+    url += '/notifications/';
+    return new ReconnectingWebsocket(url);
+  };
+
 })(window);

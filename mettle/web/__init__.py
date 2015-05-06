@@ -28,6 +28,8 @@ routes = [
      pipelines.PipelineList),
     ('/api/services/<service_name>/pipelines/<pipeline_name>/',
      'pipeline_detail', pipelines.PipelineDetails),
+    ('/api/services/<service_name>/pipelines/<pipeline_name>/notifications/',
+     'pipeline_notifications', notifications.ByPipeline),
 
     # Runs
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/',
@@ -36,6 +38,8 @@ routes = [
      'run_detail', runs.RunDetails),
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/logs/',
      'run_logs', logs.Log),
+    ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/notifications/',
+    'run_notifications', notifications.ByRun),
 
     # Jobs
     ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/jobs/',
