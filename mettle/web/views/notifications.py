@@ -65,8 +65,6 @@ class Detail(ApiView):
             # TODO: check data length first so we can't be DOSed with a huge
             # payload.
 
-            # TODO: what error to raise if payload doesn't include
-            # "acknowledged"?
             data = json.loads(self.request.get_data())
             if data.get('acknowledged') == True:
                 user = self.request.session['username']
