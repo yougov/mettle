@@ -116,6 +116,9 @@ class App(object):
     def __call__(self, environ, start_response):
         try:
             req = Request(environ)
+            # convenient access to Beaker session.  Will raise KeyError if
+            # Beaker middleware is not enabled.
+            req.session = environ['beaker.session']
             adapter = self.map.bind_to_environ(environ)
             view_name, params = adapter.match()
             view_cls = self.handlers[view_name]
