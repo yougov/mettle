@@ -1,6 +1,10 @@
 import json
 import logging
 
+import utc
+from werkzeug.utils import redirect
+from werkzeug.exceptions import BadRequest
+
 from mettle.models import Service, Pipeline, PipelineRun, Notification
 from mettle.web.framework import JSONResponse, ApiView
 
@@ -39,6 +43,43 @@ class NotificationView(ApiView):
 
         self.bind_queue_to_websocket('mettle_state',
                                      [self.get_routing_key(**kwargs)])
+
+class List(NotificationView):
+    def get_notifications(self):
+        ns = self.db.query(Notification)
+        return self.filter_acknowledged(ns)
+
+    def get_routing_key(self):
+        return 'services.#.notifications'
+
+
+# Note that this isn't a streamable resource.  We haven't needed it to be, yet.
+class Detail(ApiView):
+    def get(self, notification_id):
+        n = self.db.query(Notification).filter_by(id=notification_id).one()
+        return n.as_dict()
+
+    def post(self, notification_id):
+        n = self.db.query(Notification).filter_by(id=notification_id).one()
+        if n.acknowledged_by is None:
+            # TODO: check data length first so we can't be DOSed with a huge
+            # payload.
+
+            # TODO: what error to raise if payload doesn't include
+            # "acknowledged"?
+            data = json.loads(self.request.get_data())
+            if data.get('acknowledged') == True:
+                user = self.request.session['username']
+                n.acknowledged_by = user
+                n.acknowledged_time = utc.now()
+                self.db.commit()
+                return redirect('/api/notifications/{id}/'.format(
+                    id=notification_id), code=303)
+            else:
+                return BadRequest('Must include acknowledged: true to '
+                                  'acknowledge a notification.')
+        else:
+            return BadRequest('Notification already acknowledged.')
 
 
 class ByService(NotificationView):

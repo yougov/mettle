@@ -96,10 +96,10 @@ def data_to_routing_key(data):
         routing_key = 'services.{service_name}'
         if data.get('pipeline_name'):
             routing_key += '.pipelines.{pipeline_name}'
-        if data.get('pipeline_run_id'):
-            routing_key += '.runs.{pipeline_run_id}'
-        if data.get('job_id'):
-            routing_key += '.targets.{target}.jobs.{job_id}'
+            if data.get('pipeline_run_id'):
+                routing_key += '.runs.{pipeline_run_id}'
+                if data.get('job_id'):
+                    routing_key += '.targets.{target}.jobs.{job_id}'
         return routing_key.format(**data) + '.notifications'
     else:
         raise ValueError('Unknown table: %s' % table)

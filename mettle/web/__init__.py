@@ -16,6 +16,10 @@ routes = [
     # The one view that returns HTML.  Everything else is JSON API.
     ('/', 'index', index.Index),
 
+    # Global notifications
+    ('/api/notifications/', 'notification_list', notifications.List),
+    ('/api/notifications/<int:notification_id>/', 'notification_detail', notifications.Detail),
+
     # Services
     ('/api/services/', 'service_list', services.ServiceList),
     ('/api/services/<service_name>/', 'service_detail', services.ServiceDetail),
