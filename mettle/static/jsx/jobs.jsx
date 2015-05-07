@@ -160,12 +160,12 @@
       var lines = _.sortBy(this.state.lines, 'line_num');
       var nodes = _.map(lines, function(line) {
         return (
-          <div className='log pure-g'>
+          <div className='pure-g'>
             <div className="pure-u-1-24">{line.line_num + 1}</div>
             <div className="pure-u-23-24">{line.msg}</div>
           </div>);
       });
-      return <div className="pure-u-1">{nodes}</div>;
+      return <div className="log pure-u-1">{nodes}</div>;
     }
   });
 })();
