@@ -7,7 +7,6 @@ import utc
 from croniter import croniter
 import pika
 from mettle_protocol import declare_exchanges
-from sqlalchemy.orm import aliased
 
 from mettle.models import Pipeline, PipelineRun, Job, JobLogLine
 from mettle.settings import get_settings
