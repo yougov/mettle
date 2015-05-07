@@ -169,7 +169,7 @@ small {
   vertical-align: bottom;
   border-top: 0;
   padding: 8px 0;
-  background: #292929;
+  background: #00C5FF;
   color: #fff;
 }
 .table>tbody>tr>td:first-child {
@@ -195,8 +195,7 @@ small {
 
 .service,
 .pipeline,
-.run,
-.log {
+.run {
   padding: 14px 0;
   color: #292929;
   font-size: .8em;
@@ -206,8 +205,7 @@ small {
 }
 .service a,
 .pipeline a,
-.run a,
-.log a {
+.run a {
   color: #292929;
 }
 .service.danger,
@@ -218,10 +216,10 @@ small {
 .service .circle,
 .pipeline .circle,
 .run .circle {
-  width: 10px;
-  height: 10px;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
-  margin: 3px auto;
+  margin: 0px auto;
   
   background-color: rgba(128,255,0,1);
 }
@@ -263,6 +261,21 @@ small {
   line-height: 1.4;
   text-transform: uppercase;
   border-bottom: 1px solid #f7f7f7;
+}
+
+/* LOGS */
+
+.log {
+  margin-top: 5px;
+  /*border: 1px solid #eee;*/
+  /*background-color: rgb(250,250,250);*/
+  white-space: pre;
+  word-wrap: normal;
+  color: rgb(85,85,85);
+}
+
+.log [class *= "pure-u"] {
+  font-family: monospace;
 }
 
 /* PIPELINE RUNS */
