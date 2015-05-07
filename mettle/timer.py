@@ -187,6 +187,7 @@ def check_jobs(settings, db, rabbit):
                 new_job = Job(
                     pipeline_run=job.pipeline_run,
                     target=job.target,
+                    target_parameters=job.target_parameters
                 )
                 db.add(new_job)
             else:
