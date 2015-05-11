@@ -68,12 +68,12 @@
         params['startTime'] = new Date(job.start_time).toLocaleString(),
         params['endTime'] = new Date(job.end_time).toLocaleString()
         return (
-          <div className={job.succeeded ? 'run pure-g' : 'run pure-g danger'} key={'job-link-' + job.id}>
-            <div className="pure-u-1-24"><div className="circle"></div></div>
+          <div className={job.succeeded ? 'run pure-g' : 'run pure-g warning'} key={'job-link-' + job.id}>
+            <div className="pure-u-1-24"><Link to="Job" params={params}><div className="circle"></div></Link></div>
             <div className="pure-u-5-24"><Link to="Job" params={params}>{job.id}</Link></div>
-            <div className="pure-u-6-24">{params.createdTime}</div>
-            <div className="pure-u-6-24">{params.startTime}</div>
-            <div className="pure-u-6-24">{params.endTime}</div>
+            <div className="pure-u-6-24"><Link to="Job" params={params}>{params.createdTime}</Link></div>
+            <div className="pure-u-6-24"><Link to="Job" params={params}>{params.startTime}</Link></div>
+            <div className="pure-u-6-24"><Link to="Job" params={params}>{params.endTime}</Link></div>
           </div>);
       }, this);
       return (

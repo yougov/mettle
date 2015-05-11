@@ -125,16 +125,29 @@
       return new ReconnectingWebSocket(url);
   };
 
-  Mettle.getNotificationStream = function(serviceName, pipelineName, runId) {
-    var url = WSPREFIX + getServicesURL(serviceName);
-    if (pipelineName !== undefined) {
-      url += '/pipelines/' + pipelineName;
-      if (runId !== undefined) {
-        url += '/runs/' + runId;
+  Mettle.getNotificationStream = function(ack, serviceName, pipelineName, runId) {
+    var url = WSPREFIX;
+    if(ack === undefined) { ack = false; }
+    if(serviceName !== undefined) {
+      url += getServiceURL(serviceName);
+      if (pipelineName !== undefined) {
+        url += 'pipelines/' + pipelineName + '/';
+        if (runId !== undefined) {
+          url += 'runs/' + runId + '/';
+        }
       }
     }
-    url += '/notifications/';
-    return new ReconnectingWebsocket(url);
+    if(!serviceName) url += '/api/notifications/?acknowledged=' + ack;
+    else url += 'notifications/?acknowledged=' + ack;
+    return new ReconnectingWebSocket(url);
+  };
+
+  Mettle.acknowledgeNotification = function(notificationId) {
+    var url = API_ROOT + '/';
+    if(notificationId) {
+      url += 'notifications/' + notificationId + '/';
+    }
+    return request.post(url).send({acknowledged: true});
   };
 
 })(window);

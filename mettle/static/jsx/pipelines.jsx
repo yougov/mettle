@@ -6,7 +6,7 @@
   var PipelinesList = Mettle.components.PipelinesList = React.createClass({
     mixins: [Router.State],
     getInitialState: function() {
-      return {'pipelines': {}};
+      return {'pipelines': {}, 'notifications': {}};
     },
 
     getData: function(nextProps) {
@@ -16,6 +16,9 @@
       this.request = Mettle.getPipelines(props.serviceName, this.onPipelinesData);
       this.ws = Mettle.getPipelinesStream(props.serviceName);
       this.ws.onmessage = this.onPipelinesStreamData;
+
+      this.ws_notifications = Mettle.getNotificationStream(false, this.getParams().serviceName);
+      this.ws_notifications.onmessage = this.onNotificationsStreamData;
     },
 
     cleanup: function() {
@@ -27,6 +30,11 @@
       if (this.ws) {
         this.ws.close();
         this.ws = undefined;
+      }
+
+      if (this.ws_notifications) {
+        this.ws_notifications.close();
+        this.ws_notifications = undefined;
       }
     },
 
@@ -60,7 +68,20 @@
       });
     },
 
+    onNotificationsStreamData: function(ev) {
+      var notification = JSON.parse(ev.data);
+      var notifications = this.state.notifications;
+      if(notifications[notification.pipeline_name] === undefined) {
+        notifications[notification.pipeline_name] = {};        
+      }
+      notifications[notification.pipeline_name][notification.id] = notification;
+      this.setState({
+        'notifications': notifications
+      });
+    },
+
     render: function() {
+      var notifications = this.state.notifications;
       var nodes = _.map(this.state.pipelines, function(data, name) {
         var run_id, params = {
           newRunTime: new Date(data.next_run_time).toLocaleString(),
@@ -72,15 +93,15 @@
         }
 
         return (
-          <div className={Object.size(data.notifications)==0 ? 'pipeline pure-g' : 'pipeline pure-g danger'} key={"pipeline-link-" + name}>
-            <div className="pure-u-1-24"><div className="circle"></div></div>
+          <div className={Object.size(notifications[data.name])==0 ? 'pipeline pure-g' : 'pipeline pure-g warning'} key={"pipeline-link-" + name}>
+            <div className="pure-u-1-24"><Link to="Pipeline" params={{serviceName: this.props.serviceName, pipelineName: data.name}}><div className="circle"></div></Link></div>
             <div className="pure-u-6-24"><Link to="Pipeline" params={{serviceName: this.props.serviceName, pipelineName: data.name}}>{name}</Link></div>
-            <div className="pure-u-6-24">{data.updated_by}</div>
-            <div className="pure-u-3-24">{data.crontab}</div>
-            <div className="pure-u-2-24">{data.retries}</div>
-            <div className="pure-u-2-24">{Object.size(data.notifications)}</div>
-            <div className="pure-u-2-24">{params.lastRunTime}</div>
-            <div className="pure-u-2-24">{params.newRunTime}</div>
+            <div className="pure-u-6-24"><Link to="Pipeline" params={{serviceName: this.props.serviceName, pipelineName: data.name}}>{data.updated_by}</Link></div>
+            <div className="pure-u-3-24"><Link to="Pipeline" params={{serviceName: this.props.serviceName, pipelineName: data.name}}>{data.crontab}</Link></div>
+            <div className="pure-u-2-24"><Link to="Pipeline" params={{serviceName: this.props.serviceName, pipelineName: data.name}}>{data.retries}</Link></div>
+            <div className="pure-u-2-24 notifications"><Link to="PipelineNotifications" params={{serviceName: this.props.serviceName, pipelineName: data.name}} className="badge">{Object.size(notifications[data.name])}</Link></div>
+            <div className="pure-u-2-24"><Link to="Pipeline" params={{serviceName: this.props.serviceName, pipelineName: data.name}}>{params.lastRunTime}</Link></div>
+            <div className="pure-u-2-24"><Link to="Pipeline" params={{serviceName: this.props.serviceName, pipelineName: data.name}}>{params.newRunTime}</Link></div>
           </div>);
       }, this);
       return (

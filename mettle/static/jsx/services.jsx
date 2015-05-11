@@ -6,7 +6,7 @@
   var ServicesList = Mettle.components.ServicesList = React.createClass({
     mixins: [Router.State],
     getInitialState: function() {
-      return {'services': {}};
+      return {'services': {}, 'notifications': {}};
     },
 
     componentDidMount: function() {
@@ -14,6 +14,9 @@
       this.request = Mettle.getServices(this.onServicesData);
       this.ws = Mettle.getServicesStream();
       this.ws.onmessage = this.onServicesStreamData;
+
+      this.ws_notifications = Mettle.getNotificationStream(false, this.getParams().serviceName);
+      this.ws_notifications.onmessage = this.onNotificationsStreamData;
     },
 
     cleanup: function() {
@@ -25,6 +28,11 @@
       if (this.ws) {
         this.ws.close();
         this.ws = undefined;
+      }
+
+      if (this.ws_notifications) {
+        this.ws_notifications.close();
+        this.ws_notifications = undefined;
       }
     },
 
@@ -50,16 +58,29 @@
       });
     },
 
+    onNotificationsStreamData: function(ev) {
+      var notification = JSON.parse(ev.data);
+      var notifications = this.state.notifications;
+      if(notifications[notification.service_name] === undefined) {
+        notifications[notification.service_name] = {};        
+      }
+      notifications[notification.service_name][notification.id] = notification;
+      this.setState({
+        'notifications': notifications
+      });
+    },
+
     render: function () {
+      var notifications = this.state.notifications;
       var services = _.map(this.state.services, function(service) {
         if(!service.pipeline_names) service.pipeline_names = [];
         return (
-        <div className={Object.size(service.notifications)==0 ? 'service pure-g' : 'service pure-g danger'} key={'service-'+service.name}>
-          <div className="pure-u-1-24"><div className="circle"></div></div>
+        <div className={Object.size(notifications[service.name])==0 ? 'service pure-g' : 'service pure-g warning'} key={'service-'+service.name}>          
+          <div className="pure-u-1-24"><Link to="Service" params={{serviceName: service.name}}><div className="circle"></div></Link></div>
           <div className="pure-u-12-24"><Link to="Service" params={{serviceName: service.name}}>{service.name}</Link></div>
-          <div className="pure-u-6-24">{service.updated_by}</div>
-          <div className="pure-u-2-24">{service.pipeline_names ? service.pipeline_names.length : 0}</div>
-          <div className="pure-u-3-24">{Object.size(service.notifications)}</div>
+          <div className="pure-u-6-24"><Link to="Service" params={{serviceName: service.name}}>{service.updated_by}</Link></div>
+          <div className="pure-u-2-24"><Link to="Service" params={{serviceName: service.name}}>{service.pipeline_names ? service.pipeline_names.length : 0}</Link></div>
+          <div className="pure-u-3-24 notifications"><Link to="ServiceNotifications" params={{serviceName: service.name}} className="badge">{Object.size(notifications[service.name])}</Link></div>
         </div>
         );
       });
@@ -86,7 +107,12 @@
   var Service = Mettle.components.Service = React.createClass({
     mixins: [Router.State],
     render: function() {
-      var inside = this.getParams().pipelineName ? <RouteHandler /> : <Mettle.components.PipelinesList serviceName={this.getParams().serviceName} />;
+      var inside;
+      if(/notifications/g.test(this.getPath())) {
+        inside = <Mettle.components.Notifications serviceName={this.getParams().serviceName} />
+      } else {
+        inside = this.getParams().pipelineName ? <RouteHandler /> : <Mettle.components.PipelinesList serviceName={this.getParams().serviceName} />;
+      }
       return (
         <div className="pure-u-1">
         {inside}

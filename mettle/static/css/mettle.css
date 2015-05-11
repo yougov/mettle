@@ -23,6 +23,9 @@ time, mark, audio, video {
 	font: inherit;
 	vertical-align: baseline;
 }
+code, kbd, pre, samp {
+  font-family: monospace;
+}
 /* HTML5 display-role reset for older browsers */
 article, aside, details, figcaption, figure, 
 footer, header, hgroup, menu, nav, section {
@@ -195,23 +198,72 @@ small {
 
 .service,
 .pipeline,
-.run {
-  padding: 14px 0;
+.run,
+.log,
+.notification {
+  padding: 0;
   color: #292929;
   font-size: .8em;
   line-height: 1.3;
   text-transform: uppercase;
   border-bottom: 1px solid #f7f7f7;
 }
+.service:hover,
+.pipeline:hover,
+.run:hover,
+.log:hover,
+.notification:hover {
+  background-color: #f7f7f7;
+}
 .service a,
 .pipeline a,
-.run a {
+.run a,
+.log a,
+.notification a,
+.notification div:first-child {
   color: #292929;
+  text-decoration: none;
+  padding: 14px 0;
+  display: block;
+}
+.notification.acknowledged,
+.notification.acknowledged a {
+  color: #ccc;
+}
+.notification.acknowledged {
+  display: none;
+}
+.notification input[type="checkbox"] {
+  margin: 0 auto;
+  display: block;
+}
+.notification pre {
+  text-transform: none;
 }
 .service.danger,
 .pipeline.danger,
 .run.danger {
   background-color: #f2dede;
+}
+.service.warning,
+.pipeline.warning,
+.run.warning {
+  background-color: #ffeacc;
+}
+.service.warning:hover,
+.pipeline.warning:hover,
+.run.warning:hover {
+  background-color:#fec067;
+}
+.service.warning a,
+.pipeline.warning a,
+.run.warning a {
+  color: #fe9c10;
+}
+.service.warning:hover a,
+.pipeline.warning:hover a,
+.run.warning:hover a {
+  color: #fff;
 }
 .service .circle,
 .pipeline .circle,
@@ -219,8 +271,7 @@ small {
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  margin: 0px auto;
-  
+  margin: 0 auto;
   background-color: rgba(128,255,0,1);
 }
 .service.danger .circle,
@@ -236,22 +287,44 @@ small {
 
 .service div:last-child,
 .pipeline div:last-child,
-.run div:last-child {
+.run div:last-child,
+.notifications {
   position: relative;
 }
 
 .service div:last-child .badge,
 .pipeline div:last-child .badge,
-.run div:last-child .badge {
+.run div:last-child .badge,
+.notifications .badge {
   border-radius: 50%;
-  background-color: #feab34;
+  border: 4px solid #fff;
+  background-color: #fff;
   position: absolute;
-  top: -20px;
-  right: -10px;
+  top: 6px;
   padding: 7px 9px 5px;
-  line-height: 1;
+  line-height: 12px;
   font-size: 11px;
-  box-shadow: rgba(0,0,0,.2) -1px 1px 1px;
+  -webkit-transition: all .6s;
+  -moz-transition: all .6s;
+  transition: all .6s;
+}
+.service div:last-child .badge:hover,
+.pipeline div:last-child .badge:hover,
+.run div:last-child .badge:hover,
+.notifications .badge:hover {
+  border-color: #ccc;
+}
+.service.warning div:last-child .badge:hover,
+.pipeline.warning div:last-child .badge:hover,
+.run.warning div:last-child .badge:hover,
+.warning .notifications .badge:hover {
+  border-color: #fe9c10;
+}
+.service.warning:hover div:last-child .badge,
+.pipeline.warning:hover div:last-child .badge,
+.run.warning:hover div:last-child .badge,
+.warning:hover .notifications .badge {
+  color: #fe9c10;
 }
 
 .list-group-item {
