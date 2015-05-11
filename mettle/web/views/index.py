@@ -49,6 +49,7 @@ DEV_SCRIPTS = """
 <script src="/static/jsx/runs.jsx" type="text/jsx"></script>
 <script src="/static/jsx/pipelines.jsx" type="text/jsx"></script>
 <script src="/static/jsx/services.jsx" type="text/jsx"></script>
+<script src="/static/jsx/notifications.jsx" type="text/jsx"></script>
 <script src="/static/jsx/app.jsx" type="text/jsx"></script>
 """
 

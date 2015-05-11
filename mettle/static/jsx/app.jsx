@@ -64,8 +64,11 @@
   var routes = (
     <Route name="App" path="/" handler={App}>
       <Route name="Service" path="services/:serviceName/" handler={Mettle.components.Service}>
+        <Route name="ServiceNotifications" path="notifications/" handler={Mettle.components.Notifications} />
         <Route name="Pipeline" path="pipelines/:pipelineName/" handler={Mettle.components.Pipeline}>
+          <Route name="PipelineNotifications" path="notifications/" handler={Mettle.components.Notifications} />
           <Route name="PipelineRun" path="runs/:runId/" handler={Mettle.components.PipelineRun}>
+            <Route name="PipelineRunNotifications" path="notifications/" handler={Mettle.components.Notifications} />
             <Route name="Target" path="targets/:target/" handler={Mettle.components.Target}>
               <Route name="Job" path="jobs/:jobId/" handler={Mettle.components.Job} />
             </Route>

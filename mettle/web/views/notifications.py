@@ -56,8 +56,9 @@ class List(NotificationView):
 # Note that this isn't a streamable resource.  We haven't needed it to be, yet.
 class Detail(ApiView):
     def get(self, notification_id):
+        print notification_id
         n = self.db.query(Notification).filter_by(id=notification_id).one()
-        return n.as_dict()
+        return JSONResponse(n.as_dict())
 
     def post(self, notification_id):
         n = self.db.query(Notification).filter_by(id=notification_id).one()
@@ -70,6 +71,7 @@ class Detail(ApiView):
                 user = self.request.session['username']
                 n.acknowledged_by = user
                 n.acknowledged_time = utc.now()
+                print n
                 self.db.commit()
                 return redirect('/api/notifications/{id}/'.format(
                     id=notification_id), code=303)

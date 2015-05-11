@@ -347,13 +347,13 @@
         };
 
         return (
-          <div className={data.end_time && !data.succeeded ? 'run pure-g danger' : 'run pure-g'} key={"run-link-" + data.id}>
-            <div className="pure-u-1-24"><div className="circle"></div></div>
+          <div className={data.end_time && !data.succeeded ? 'run pure-g warning' : 'run pure-g'} key={"run-link-" + data.id}>
+            <div className="pure-u-1-24"><Link to="PipelineRun" params={params}><div className="circle"></div></Link></div>
             <div className="pure-u-1-24"><Link to="PipelineRun" params={params}>{data.id}</Link></div>
-            <div className="pure-u-4-24">{data.started_by}</div>
-            <div className="pure-u-6-24">{params.createdTime}</div>
-            <div className="pure-u-6-24">{params.ackTime}</div>
-            <div className="pure-u-6-24">{params.endTime}</div>
+            <div className="pure-u-4-24"><Link to="PipelineRun" params={params}>{data.started_by}</Link></div>
+            <div className="pure-u-6-24"><Link to="PipelineRun" params={params}>{params.createdTime}</Link></div>
+            <div className="pure-u-6-24"><Link to="PipelineRun" params={params}>{params.ackTime}</Link></div>
+            <div className="pure-u-6-24"><Link to="PipelineRun" params={params}>{params.endTime}</Link></div>
           </div>);
       }, this);
       return (
