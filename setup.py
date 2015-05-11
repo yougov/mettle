@@ -39,7 +39,7 @@ setup_params = dict(
             'mettle = mettle.cli:main',
         ]
     },
-    description='A robust framework for scheduling and executing ETL jobs.',
+    description='A micro service framework for data pipelines, providing scheduling, retrying, and error reporting.',
 )
 
 if __name__ == '__main__':
