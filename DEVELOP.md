@@ -7,7 +7,7 @@ provisioning script to finish.
 4. Type `vagrant ssh` to get a shell into the Vagrant environment.
 5. `cd /vagrant`
 6. `mkvirtualenv mettle`
-7. `make dev`.
+7. `make dev`
 8. `foreman start`
 
 You should now see a bunch of output in your terminal.  The Mettle UI should be
