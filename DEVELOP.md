@@ -15,13 +15,3 @@ running on port 8000, and some dummy jobs will be running (creating some tiny
 text files in a temp folder).  You can click around the Mettle UI to watch those
 jobs complete, or fail (they're coded to randomly fail some percent of the time,
 so we can test retries and error reporting).
-
-When you're ready to release new changes, use the
-[bumpversion](https://pypi.python.org/pypi/bumpversion) tool.  For
-example:
-
-    bumpversion patch
-
-This will update setup.py with a new version number, and also create a new
-Mercurial tag with that version number.  For bigger releases, you can also use
-"bumpversion minor" and "bumpversion major".  Try to follow http://semver.org/.
