@@ -165,6 +165,7 @@ apt-get install -y --force-yes \
     python-pip \
     python-setuptools \
     python-software-properties \
+    rabbitmq-server \
     vim \
     #
 
@@ -264,6 +265,16 @@ export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python2.7
 source /usr/local/bin/virtualenvwrapper.sh
 EOF
 # end /home/vagrant/.bashrc
+
+
+###################
+# DEV: RABBIT CONFIG
+###################
+cat > /etc/rabbitmq/enabled_plugins << EOF
+[rabbitmq_management].
+EOF
+/etc/init.d/rabbitmq-server restart
+
 
 ###################
 # DEV: POSTGRES

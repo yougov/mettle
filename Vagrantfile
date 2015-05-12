@@ -11,7 +11,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
     # https://github.com/mitchellh/vagrant/issues/1673
     config.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
-    config.vm.network :forwarded_port, guest: 8000, host: 8000 # Web App 1
+    config.vm.network :forwarded_port, guest: 8000, host: 8000 # Mettle web app 
+    config.vm.network :forwarded_port, guest: 15672, host: 15672 # Rabbit admin
 
     config.vm.provider :virtualbox do |v|
         # Allow symlinks to support virtualenvs inside /vagrant.
