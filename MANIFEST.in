@@ -1,2 +1,6 @@
-recursive-include mettle/static/ *
-recursive-include mettle/migrations/ *
+include mettle/static/bower.json
+recursive-include mettle/static/css *
+recursive-include mettle/static/font *
+recursive-include mettle/static/js *
+recursive-include mettle/static/jsx *
+recursive-include mettle/migrations *
