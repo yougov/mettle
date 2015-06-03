@@ -71,8 +71,9 @@ def main():
                     )
 
 def data_to_routing_key(data):
+    data = dict(data)
     table = data['tablename']
-    if data.get('job_id'):
+    if data.get('target'):
         data['target'] = mq_escape(data['target'])
 
     if table == 'services':
@@ -87,11 +88,12 @@ def data_to_routing_key(data):
                 '.runs.{pipeline_run_id}'
                 '.nacks.{id}').format(**data)
     elif table == 'jobs':
-        return ('services.{service_name}'
+        rk = ('services.{service_name}'
                 '.pipelines.{pipeline_name}'
                 '.runs.{pipeline_run_id}'
                 '.targets.{target}'
                 '.jobs.{id}').format(**data)
+        return rk
     elif table == 'notifications':
         routing_key = 'services.{service_name}'
         if data.get('pipeline_name'):
