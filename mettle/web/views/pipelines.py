@@ -2,7 +2,6 @@ import json
 
 from mettle.models import Pipeline, Service, PipelineRun
 from mettle.web.framework import JSONResponse, ApiView
-from mettle.web.rabbit import state_message_stream
 
 
 def pipeline_summary(pipeline, runs=None, notifications=None):
@@ -15,8 +14,10 @@ def pipeline_summary(pipeline, runs=None, notifications=None):
         retries=pipeline.retries,
         crontab=pipeline.crontab,
         chained_from_id=pipeline.chained_from_id,
-        next_run_time=pipeline.next_run_time().isoformat(),
-        last_run_time=pipeline.last_run_time().isoformat(),
+        next_run_time=(pipeline.next_run_time().isoformat() if
+                       pipeline.next_run_time else None),
+        last_run_time=(pipeline.last_run_time().isoformat() if
+                       pipeline.last_run_time else None),
     )
 
     if runs is not None:
