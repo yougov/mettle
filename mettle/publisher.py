@@ -73,7 +73,7 @@ def main():
 def data_to_routing_key(data):
     data = dict(data)
     table = data['tablename']
-    if data.get('target'):
+    if 'target' in data:
         data['target'] = mq_escape(data['target'])
 
     if table == 'services':
