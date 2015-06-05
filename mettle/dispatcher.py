@@ -108,7 +108,7 @@ def on_job_end(settings, rabbit, db, data):
     end_time = isodate.parse_datetime(data['end_time'])
     job = db.query(Job).filter_by(id=data['job_id']).one()
     job.end_time = end_time
-    job.succeeded = data['succeeded']
+    job.succeeded = data.get('succeeded') or False
     run = job.pipeline_run
 
     if job.succeeded:
