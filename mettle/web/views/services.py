@@ -1,14 +1,8 @@
-import logging
-import json
-
 from sqlalchemy.sql.expression import func
-import pika
-import utc
+from spa import JSONResponse
 
-from mettle.web.framework import JSONResponse, ApiView
-from mettle.web.rabbit import state_message_stream
-from mettle.models import (JobLogLine, Job, PipelineRun, Pipeline, Service,
-                           Notification)
+from mettle.web.framework import ApiView
+from mettle.models import Service
 
 
 def service_summary(service):
@@ -48,14 +42,6 @@ class ServiceList(ApiView):
         ]
         self.bind_queue_to_websocket(exchange, routing_keys)
 
-    def on_rabbit_message(self, ch, method, props, body):
-        service_name = parsed['name']
-        if service_name not in self.services:
-            self.services[service_name] = parsed
-        else:
-            self.services[service_name].update(parsed)
-        self.ws.send(json.dumps(self.services[service_name]))
-
 
 class ServiceDetail(ApiView):
     def get(self, service_name):
@@ -66,9 +52,5 @@ class ServiceDetail(ApiView):
     def websocket(self, service_name):
         settings = self.app.settings
         exchange = settings['state_exchange']
-        routing_key = 'services.' + service_name
-        _, _, stream = state_message_stream(settings.rabbit_url, exchange,
-                                            routing_key)
-        for msg in stream:
-            self.ws.send(msg)
-
+        routing_keys = ['services.' + service_name]
+        self.bind_queue_to_websocket(exchange, routing_keys)

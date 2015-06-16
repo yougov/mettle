@@ -5,11 +5,12 @@ import os
 from werkzeug.wsgi import SharedDataMiddleware
 from sqlalchemy.orm import scoped_session
 
-from mettle.web.framework import App
+import spa
+
 from mettle.settings import get_settings
 from mettle.db import make_session_cls
-from mettle.web.views import (logs, examples, services, pipelines, runs,
-                              targets, index, notifications)
+from mettle.web.views import (logs, services, pipelines, runs, targets, index,
+                              notifications)
 
 
 routes = [
@@ -69,7 +70,7 @@ def import_class(path):
 
 if 'app' not in globals():
     settings = get_settings()
-    app = App(routes, settings)
+    app = spa.App(routes, settings)
     app.db = scoped_session(make_session_cls(settings.db_url))
     app = SharedDataMiddleware(app, {
         '/static': ('mettle', 'static')

@@ -1,7 +1,9 @@
 import json
 
+from spa import JSONResponse
+
 from mettle.models import Pipeline, Service, PipelineRun
-from mettle.web.framework import JSONResponse, ApiView
+from mettle.web.framework import ApiView
 
 
 def pipeline_summary(pipeline, runs=None, notifications=None):

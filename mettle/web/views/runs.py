@@ -1,8 +1,7 @@
-import pika
+from spa import JSONResponse
 
-from mettle.web.framework import JSONResponse, ApiView
-from mettle.web.rabbit import state_message_stream
-from mettle.models import JobLogLine, Job, PipelineRun, Pipeline, Service
+from mettle.web.framework import ApiView
+from mettle.models import Job, PipelineRun, Pipeline, Service
 
 
 class RunList(ApiView):

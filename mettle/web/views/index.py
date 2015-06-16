@@ -3,7 +3,7 @@ import os
 import hashlib
 from pkg_resources import resource_filename
 
-from mettle.web.framework import View, Response
+from spa import Handler, Response
 
 CSS_FILES = [
   'static/bower/pure/pure-min.css',
@@ -74,6 +74,6 @@ else:
                        css_files="\n".join(generate_css_tag(s) for s in CSS_FILES))
 
 
-class Index(View):
+class Index(Handler):
     def get(self):
         return Response(HOME, content_type='text/html')

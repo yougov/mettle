@@ -4,9 +4,10 @@ import logging
 import utc
 from werkzeug.utils import redirect
 from werkzeug.exceptions import BadRequest
+from spa import JSONResponse
 
 from mettle.models import Service, Pipeline, PipelineRun, Notification
-from mettle.web.framework import JSONResponse, ApiView
+from mettle.web.framework import ApiView
 
 
 logging.basicConfig()

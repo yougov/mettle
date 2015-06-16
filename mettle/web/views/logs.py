@@ -1,10 +1,10 @@
 import json
 
-import pika
+from spa import JSONResponse
 
 import mettle_protocol as mp
 
-from mettle.web.framework import JSONResponse, ApiView
+from mettle.web.framework import ApiView
 from mettle.models import JobLogLine, Job, PipelineRun, Pipeline, Service
 
 
