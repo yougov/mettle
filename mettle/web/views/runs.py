@@ -1,4 +1,6 @@
+import iso8601
 from spa import JSONResponse
+from werkzeug.utils import redirect
 
 from mettle.web.framework import ApiView
 from mettle.models import Job, PipelineRun, Pipeline, Service
@@ -17,6 +19,27 @@ class RunList(ApiView):
         exchange = settings['state_exchange']
         routing_key = 'services.%s.pipelines.%s.runs.*' % (service_name, pipeline_name)
         self.bind_queue_to_websocket(exchange, [routing_key])
+
+    def post(self, service_name, pipeline_name):
+        service = self.db.query(Service).filter_by(name=service_name).one()
+        pipeline = self.db.query(Pipeline).filter_by(service=service,
+                                                     name=pipeline_name).one()
+
+        data = self.request.json()
+        target_time = iso8601.parse_date(data['target_time'])
+        run = PipelineRun(
+            pipeline=pipeline,
+            started_by=self.request.session['username'],
+            target_time=target_time,
+        )
+        self.db.add(run)
+        self.db.commit()
+
+        return redirect(self.app.url('run_detail', dict(
+            service_name=service_name,
+            pipeline_name=pipeline_name,
+            run_id=run.id,
+        )))
 
 
 class RunDetails(ApiView):
