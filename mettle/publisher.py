@@ -48,7 +48,7 @@ def main():
             else:
                 conn.poll()
                 while conn.notifies:
-                    notify = conn.notifies.pop()
+                    notify = conn.notifies.pop(0)
                     payload = json.loads(notify.payload)
                     table = payload['tablename']
 
@@ -115,8 +115,8 @@ def get_record_as_json(cur, tablename, row_id):
     # IMPORTANT NOTE: Only use this function in trusted input.  Never on data
     # being created by users.  The table name is not escaped.
     q = """
-    SELECT row_to_json(new_with_table)::text
-    FROM (SELECT {t}.*, '{t}' as tablename) new_with_table
+    SELECT row_to_json(new_with_table)
+    FROM (SELECT {t}.*, '{t}' AS tablename FROM {t}) new_with_table
     WHERE id=%s;""".format(
         t=tablename,
     )
