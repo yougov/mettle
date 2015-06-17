@@ -11,6 +11,7 @@ from mettle.settings import get_settings
 from mettle.db import make_session_cls
 from mettle.web.views import (logs, services, pipelines, runs, targets, index,
                               notifications)
+from mettle.web.wrappers import MettleRequest
 
 
 routes = [
@@ -70,7 +71,7 @@ def import_class(path):
 
 if 'app' not in globals():
     settings = get_settings()
-    app = spa.App(routes, settings)
+    app = spa.App(routes, settings, request_class=MettleRequest)
     app.db = scoped_session(make_session_cls(settings.db_url))
     app = SharedDataMiddleware(app, {
         '/static': ('mettle', 'static')

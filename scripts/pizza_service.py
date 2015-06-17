@@ -98,6 +98,11 @@ class PepperoniPipeline(PizzaPipeline):
             # - cyclic dependencies are not allowed
         return self.targets
 
+    def get_target_parameters(self, target_time):
+        return {
+            "flour": {"foo": "bar"},
+        }
+
 
 class HawaiianPipeline(PizzaPipeline):
     def get_targets(self, target_time):
