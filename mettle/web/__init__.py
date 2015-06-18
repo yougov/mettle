@@ -69,18 +69,21 @@ def import_class(path):
         raise ImportError(e)
 
 
-if 'app' not in globals():
+def make_app():
     settings = get_settings()
     app = spa.App(routes, settings, request_class=MettleRequest)
     app.db = scoped_session(make_session_cls(settings.db_url))
     app = SharedDataMiddleware(app, {
         '/static': ('mettle', 'static')
     })
-
-    # also wrap the app in each middleware specified in settings.
     for cls_string, config in settings.wsgi_middlewares:
         cls = import_class(cls_string)
         app = cls(app, config)
+    return app
+
+
+if 'app' not in globals():
+    app = make_app()
 
 if __name__ == "__main__":
     from gevent import pywsgi

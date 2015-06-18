@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-import json
 import logging
 
 import spa
 import pika
 import utc
+from werkzeug.exceptions import HTTPException
+
+from mettle.web.exceptions import classpath, EXCEPTION_JSON_RESPONSES
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -50,3 +52,16 @@ class ApiView(spa.Handler):
         rabbit_conn = getattr(self, 'rabbit_conn', None)
         if rabbit_conn:
             rabbit_conn.close()
+
+    def __call__(self, environ, start_response):
+        try:
+            return super(ApiView, self).__call__(environ, start_response)
+        except Exception as e:
+            if isinstance(e, HTTPException):
+                # The framework can deal with these.
+                raise
+            logger.debug(str(e))
+            # For other kinds of exceptions, fall back to our mapping.
+            cls_path = classpath(e)
+            resp_cls = EXCEPTION_JSON_RESPONSES[cls_path]
+            return resp_cls(str(e))(environ, start_response)

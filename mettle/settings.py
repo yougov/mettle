@@ -16,6 +16,9 @@ def random_secret(n=64):
     return ''.join([random.choice(chars) for x in xrange(n)])
 
 
+DEV_USERNAME = 'dev_user'
+
+
 DEFAULTS = {
     'db_url': 'postgresql://postgres@/mettle',
 
@@ -55,7 +58,7 @@ DEFAULTS = {
     # key.
     'wsgi_middlewares': [
         ('mettle.web.middlewares.DummyAuthMiddleware', {
-            'username': 'test_user',
+            'username': DEV_USERNAME,
         }),
         ('beaker.middleware.SessionMiddleware', {
             'session.type': 'cookie',
@@ -68,9 +71,6 @@ DEFAULTS = {
         }),
     ]
 }
-
-
-
 
 
 class AttrDict(dict):

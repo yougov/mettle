@@ -1,6 +1,7 @@
 import json
 
 from spa import JSONResponse
+from spa import exceptions
 
 from mettle.models import Pipeline, Service, PipelineRun
 from mettle.web.framework import ApiView
@@ -93,5 +94,34 @@ class PipelineDetails(ApiView):
             Pipeline.name==pipeline_name,
             Service.id==Pipeline.service_id,
         ).one()
-        data = pipeline.as_dict()
-        return JSONResponse(data)
+        return JSONResponse(pipeline.as_dict())
+
+    def put(self, service_name, pipeline_name):
+        pipeline = self.db.query(Pipeline).join(Service).filter(
+            Service.name==service_name,
+            Pipeline.name==pipeline_name,
+            Service.id==Pipeline.service_id,
+        ).one()
+        data = self.request.json()
+
+        # These are controlled from messages in the mettle protocol, not from
+        # the UI.
+        uneditable_fields = ('service_id', 'name')
+        for f in uneditable_fields:
+            if f in data and data[f] != getattr(pipeline, f):
+                raise exceptions.JSONBadRequest('Cannot change %s' % f)
+
+        editable_fields = ('active', 'retries', 'crontab', 'chained_from_id',
+                           'notification_list_id')
+        edited = False
+        for f in editable_fields:
+            if f in data:
+                oldval = getattr(pipeline, f)
+                newval = data[f]
+                if newval != oldval:
+                    setattr(pipeline, f, newval)
+                    edited = True
+        if edited:
+            pipeline.updated_by = self.request.session['username']
+        self.db.commit()
+        return JSONResponse(pipeline.as_dict())
