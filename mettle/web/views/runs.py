@@ -35,11 +35,14 @@ class RunList(ApiView):
         self.db.add(run)
         self.db.commit()
 
-        return redirect(self.app.url('run_detail', dict(
+        url = self.app.url('run_detail', dict(
             service_name=service_name,
             pipeline_name=pipeline_name,
             run_id=run.id,
-        )))
+        ))
+
+        return JSONResponse(run.as_dict(), headers={'Location': url},
+                            status=302)
 
 
 class RunDetails(ApiView):

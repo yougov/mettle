@@ -93,6 +93,11 @@
     return request.get(url, cb);
   };
 
+  Mettle.newRun = function(serviceName, pipelineName, targetTime, cb) {
+    var url = getRunsURL(serviceName, pipelineName);
+    return request.post(url).send({target_time: targetTime}).end(cb);
+  };
+
   Mettle.getRunsStream = function(serviceName, pipelineName) {
     return new ReconnectingWebSocket(WSPREFIX + getRunsURL(serviceName, pipelineName));
   };
@@ -103,7 +108,7 @@
   };
 
   Mettle.getRunStream = function (serviceName, pipelineName, runId) {
-    return new ReconnectingWebSocket(getRunURL(serviceName, pipelineName, runId));
+    return new ReconnectingWebSocket(WSPREFIX + getRunURL(serviceName, pipelineName, runId));
   };
 
   Mettle.getRunJobsStream = function (serviceName, pipelineName, runId) {

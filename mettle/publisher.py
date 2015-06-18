@@ -16,6 +16,7 @@ import select
 
 from functools32 import lru_cache
 import pika
+import pgpubsub
 import psycopg2
 from mettle_protocol import mq_escape
 
@@ -25,50 +26,55 @@ from mettle.db import parse_pgurl
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 PIKA_PERSISTENT_MODE = 2
+PG_CHANNEL = 'mettle_state'
 
 def main():
 
     settings = get_settings()
+
     conn = psycopg2.connect(**parse_pgurl(settings.db_url))
     conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-
-    pg_listen_channel = 'mettle_state'
 
     rabbit_conn = pika.BlockingConnection(pika.URLParameters(settings.rabbit_url))
     rabbit = rabbit_conn.channel()
     exchange = settings['state_exchange']
     rabbit.exchange_declare(exchange=exchange, type='topic', durable=True)
 
-    with conn.cursor() as curs:
-        logger.info("Listening for notifications to %s." % pg_listen_channel)
-        curs.execute('LISTEN %s;' % pg_listen_channel)
-        while True:
-            if select.select([conn], [], [], 5) == ([], [], []):
-                logger.debug("No messages for 5 seconds.")
-            else:
-                conn.poll()
-                while conn.notifies:
-                    notify = conn.notifies.pop(0)
-                    payload = json.loads(notify.payload)
-                    table = payload['tablename']
+    pubsub = pgpubsub.PubSub(conn)
+    pubsub.listen(PG_CHANNEL)
 
-                    # Handle payloads too big for a PG NOTIFY.
-                    if payload.get('error') == 'too long':
-                        payload = get_record_as_json(curs, table, payload['id'])
+    logger.info('Listening on Postgres channel "%s"' % PG_CHANNEL)
 
-                    # add service_name and pipeline_name where applicable, doing
-                    # another DB lookup if necessary.
-                    extra = extra_data(curs, table, payload['id'])
-                    payload.update(extra)
+    for event in pubsub.events():
+        payload = json.loads(event.payload)
+        table = payload['tablename']
 
-                    rabbit.basic_publish(
-                        exchange=exchange,
-                        routing_key=data_to_routing_key(payload),
-                        body=json.dumps(payload),
-                        properties=pika.BasicProperties(
-                            delivery_mode=PIKA_PERSISTENT_MODE,
-                        )
-                    )
+        with conn.cursor() as curs:
+            # Handle payloads too big for a PG NOTIFY.
+            if payload.get('error') == 'too long':
+                payload = get_record_as_json(curs, table, payload['id'])
+
+            # add service_name and pipeline_name where applicable, doing
+            # another DB lookup if necessary.
+            extra = extra_data(curs, table, payload['id'])
+        payload.update(extra)
+        publish_event(rabbit, exchange, payload)
+
+def publish_event(chan, exchange, data):
+
+    routing_key = data_to_routing_key(data)
+    if len(routing_key) > 255:
+        raise ValueError("Routing key longer than 255 bytes (%s)" %
+                         routing_key)
+    chan.basic_publish(
+        exchange=exchange,
+        routing_key=routing_key,
+        body=json.dumps(data),
+        properties=pika.BasicProperties(
+            delivery_mode=PIKA_PERSISTENT_MODE,
+        )
+    )
+
 
 def data_to_routing_key(data):
     data = dict(data)

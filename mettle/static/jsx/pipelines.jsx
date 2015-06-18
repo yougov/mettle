@@ -131,7 +131,13 @@
     mixins: [Router.State],
 
     render: function() {
-      var inside = this.getParams().runId ? <RouteHandler /> : <Mettle.components.RunsList serviceName={this.getParams().serviceName} pipelineName={this.getParams().pipelineName} />;
+      var inside;
+      var routes = this.getRoutes();
+      if (routes[routes.length-1].name === 'Pipeline') {
+        inside = <Mettle.components.RunsList serviceName={this.getParams().serviceName} pipelineName={this.getParams().pipelineName} />;
+      } else {
+        inside = <RouteHandler />;
+      }
       return (
         <div>
           {inside}

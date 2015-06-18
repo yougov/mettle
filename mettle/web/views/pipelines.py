@@ -95,4 +95,3 @@ class PipelineDetails(ApiView):
         ).one()
         data = pipeline.as_dict()
         return JSONResponse(data)
-

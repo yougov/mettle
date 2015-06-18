@@ -67,6 +67,7 @@
         <Route name="ServiceNotifications" path="notifications/" handler={Mettle.components.Notifications} />
         <Route name="Pipeline" path="pipelines/:pipelineName/" handler={Mettle.components.Pipeline}>
           <Route name="PipelineNotifications" path="notifications/" handler={Mettle.components.Notifications} />
+          <Route name="NewRun" path="runs/new/" handler={Mettle.components.NewRun} />
           <Route name="PipelineRun" path="runs/:runId/" handler={Mettle.components.PipelineRun}>
             <Route name="PipelineRunNotifications" path="notifications/" handler={Mettle.components.Notifications} />
             <Route name="Target" path="targets/:target/" handler={Mettle.components.Target}>

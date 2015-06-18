@@ -441,3 +441,16 @@ keyframes fadesomefails {
 .failCount {
   fill: red;
 }
+
+.new-button {
+  float: right;
+}
+
+table.summary {
+  font-size: 12px;
+  border: none;
+}
+
+table.summary td {
+  border: none;
+}

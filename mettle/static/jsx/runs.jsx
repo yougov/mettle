@@ -34,6 +34,7 @@
       getInitialState: function() {
         return {
           runId: null,
+          succeeded: false,
 
           // key is a target, value is an object, with job_id as key
           targetJobs: {},
@@ -55,9 +56,14 @@
         this.request = undefined;
       }
 
-      if (this.ws) {
-        this.ws.close();
-        this.ws = undefined;
+      if (this.jobStream) {
+        this.jobStream.close();
+        this.jobStream = undefined;
+      }
+
+      if (this.runStream) {
+        this.runStream.close();
+        this.runStream = undefined;
       }
 
     },
@@ -83,10 +89,15 @@
                                    params.runId,
                                    this.onPipelineData);
 
-      this.ws = Mettle.getRunJobsStream(params.serviceName,
+      this.jobStream = Mettle.getRunJobsStream(params.serviceName,
                                      params.pipelineName,
                                      params.runId);
-      this.ws.onmessage = this.onJobMessage;
+      this.jobStream.onmessage = this.onJobMessage;
+
+      this.runStream = Mettle.getRunStream(params.serviceName,
+                                           params.pipelineName,
+                                           params.runId)
+      this.runStream.onmessage = this.onRunMessage;
 
       // TODO: Also subscribe to the run's stream to see when its end_time and
       // succeeded fields change.
@@ -94,13 +105,34 @@
 
     onPipelineData: function(resp) {
       var data = resp.body;
-        
-      this.setState({
+
+      var newState = {
         runId: data.id,
-        graph: layoutGraph(data.targets, this.nodeSize),
-        pipeline: data.pipeline,
-        targetJobs: _.reduce(data.jobs, this.updateTargetJobs, this.state.targetJobs, this)
-      });
+        targetTime: data.target_time,
+        succeeded: data.succeeded,
+        createdTime: data.created_time,
+        startedBy: data.started_by,
+        ackTime: data.ack_time,
+        endTime: data.end_time
+      };
+
+      if (Object.keys(data.targets).length !== 0) {
+        newState.graph = layoutGraph(data.targets, this.nodeSize);
+      }
+
+      if (data.pipeline !== undefined) {
+        newState.pipeline = data.pipeline;
+      }
+
+      if (data.jobs !== undefined) {
+        newState.targetJobs = _.reduce(data.jobs, this.updateTargetJobs, this.state.targetJobs, this);
+      }
+        
+      this.setState(newState);
+    },
+
+    onRunMessage: function(ev) {
+      this.onPipelineData({body: JSON.parse(ev.data)});
     },
 
     onJobMessage: function(ev) {
@@ -128,13 +160,32 @@
 
     render: function() {
       var key = 'run_' + this.getParams().runId
-      var inside = this.getParams().target ? <RouteHandler /> : <PipelineGraph graph={this.state.graph} targetJobs={this.state.targetJobs} pipeline={this.state.pipeline} nodeSize={this.nodeSize} key={key} />;
+      var inside;
+
+      if (this.getParams().target) {
+        inside = <RouteHandler />;
+      } else {
+        inside = <div>
+            <table className="pure-table summary">
+              <tbody>
+              <tr><td>Target Time</td><td>{this.state.targetTime}</td></tr>
+              <tr><td>Succeeded</td><td>{this.state.succeeded.toString()}</td></tr>
+              <tr><td>Started By</td><td>{this.state.startedBy}</td></tr>
+              <tr><td>Created Time</td><td>{this.state.createdTime}</td></tr>
+              <tr><td>Ack Time</td><td>{this.state.ackTime}</td></tr>
+              <tr><td>End Time</td><td>{this.state.endTime}</td></tr>
+              </tbody>
+            </table>
+            <PipelineGraph graph={this.state.graph} targetJobs={this.state.targetJobs} pipeline={this.state.pipeline} nodeSize={this.nodeSize} key={key} />
+          </div>
+      }
+      
       return (
       <div className="pure-u-1">
         <h1 className="page-header"><Link to="App">Home</Link><Breadcrumbs /></h1>
         {inside}
       </div>
-      );
+      )
     }
   });
 
@@ -278,6 +329,71 @@
     }
   });
 
+  var NewRun = Mettle.components.NewRun = React.createClass({
+    mixins: [Router.State, Router.Navigation],
+
+    onSubmit: function(targetTime) {
+      var params = this.getParams();
+      Mettle.newRun(params.serviceName, params.pipelineName, targetTime, this.onSuccess);
+    },
+
+    onSuccess: function(resp) {
+      // succesfully POSTed a new run!  Now redirect the user to the place in
+      // the UI where they can watch it.
+      var params = this.getParams();
+      params['runId'] = resp.body['id'];
+      this.transitionTo('PipelineRun', params);
+    },
+
+    render: function() {
+      var params = this.getParams();
+      return (
+        <div>
+          <h1 className="page-header">
+            <Link to="App">Home</Link><Breadcrumbs />
+            <span>New Run</span>
+          </h1>
+          <NewRunForm serviceName={params.serviceName} pipelineName={params.pipelineName} onSubmit={this.onSubmit}/>
+        </div>
+      )}
+  });
+
+  var NewRunForm = Mettle.components.NewRunForm = React.createClass({
+    // Show a form with date and time inputs, populated by default with the
+    // current UTC date and time.  You must pass an onSubmit function to this
+    // component as a prop.  When the user clicks Submit, that function will be
+    // called with the iso8601-formatted datetime string from the form.
+    handleSubmit: function(ev, id) {
+      ev.preventDefault();
+      var date = this.refs.date.getDOMNode().value; 
+      var time = this.refs.time.getDOMNode().value; 
+      var targetTime = date + "T" + time;
+      this.props.onSubmit(targetTime);
+    },
+
+    pad: function (num, size) {
+      var s = num+"";
+      while (s.length < size) s = "0" + s;
+      return s;
+    },
+
+    render: function() {
+      var now = new Date();
+      var nowDate = now.getUTCFullYear() + "-" + this.pad(now.getUTCMonth() + 1, 2) + "-" + this.pad(now.getUTCDate(), 2);
+      var nowTime = this.pad(now.getUTCHours(), 2) + ":" + this.pad(now.getUTCMinutes(), 2);
+      return (
+        <form onSubmit={this.handleSubmit} className="pure-form">
+        <p>Enter the date and time for a new run of this pipeline.  All times are UTC.</p>
+          <fieldset>
+            <input type="date" ref="date" defaultValue={nowDate} />
+            <input type="time" ref="time" defaultValue={nowTime} />
+            <button type="submit" className="pure-button pure-button-primary">Submit</button>
+          </fieldset>
+        </form>
+      );
+    }
+  });
+
   var RunsList = Mettle.components.RunsList = React.createClass({
     mixins: [Router.State],
 
@@ -341,6 +457,7 @@
           serviceName: this.props.serviceName,
           pipelineName: this.props.pipelineName,
           runId: data.id,
+          targetTime: new Date(data.target_time).toLocaleString(),
           createdTime: new Date(data.created_time).toLocaleString(),
           ackTime: data.ack_time ? new Date(data.ack_time).toLocaleString() : '',
           endTime: data.end_time ? new Date(data.end_time).toLocaleString() : ''
@@ -348,26 +465,33 @@
 
         return (
           <div className={data.end_time && !data.succeeded ? 'run pure-g warning' : 'run pure-g'} key={"run-link-" + data.id}>
-            <div className="pure-u-1-24"><Link to="PipelineRun" params={params}><div className="circle"></div></Link></div>
-            <div className="pure-u-1-24"><Link to="PipelineRun" params={params}>{data.id}</Link></div>
+            <div className="pure-u-2-24"><Link to="PipelineRun" params={params}><div className="circle"></div></Link></div>
+            <div className="pure-u-2-24"><Link to="PipelineRun" params={params}>{data.id}</Link></div>
+            <div className="pure-u-4-24"><Link to="PipelineRun" params={params}>{params.targetTime}</Link></div>
+            <div className="pure-u-4-24"><Link to="PipelineRun" params={params}>{params.createdTime}</Link></div>
+            <div className="pure-u-4-24"><Link to="PipelineRun" params={params}>{params.ackTime}</Link></div>
+            <div className="pure-u-4-24"><Link to="PipelineRun" params={params}>{params.endTime}</Link></div>
             <div className="pure-u-4-24"><Link to="PipelineRun" params={params}>{data.started_by}</Link></div>
-            <div className="pure-u-6-24"><Link to="PipelineRun" params={params}>{params.createdTime}</Link></div>
-            <div className="pure-u-6-24"><Link to="PipelineRun" params={params}>{params.ackTime}</Link></div>
-            <div className="pure-u-6-24"><Link to="PipelineRun" params={params}>{params.endTime}</Link></div>
           </div>);
       }, this);
+
       return (
       <div className="pure-u-1">
-        <h1 className="page-header"><Link to="App">Home</Link><Breadcrumbs /><span>Runs</span></h1>
+        <h1 className="page-header">
+          <Link to="App">Home</Link><Breadcrumbs />
+          <span>Runs</span>
+          <Link to="NewRun" params={this.getParams()} className="new-button">New Run</Link>
+        </h1>
         <table className="table">
           <thead>
             <tr className="pure-g">
-              <th className="pure-u-1-24"></th>
-              <th className="pure-u-1-24">ID</th>
+              <th className="pure-u-2-24"></th>
+              <th className="pure-u-2-24">ID</th>
+              <th className="pure-u-4-24">Target Time</th>
+              <th className="pure-u-4-24">Created</th>
+              <th className="pure-u-4-24">Ack Time</th>
+              <th className="pure-u-4-24">Ended</th>
               <th className="pure-u-4-24">Started By</th>
-              <th className="pure-u-6-24">Created</th>
-              <th className="pure-u-6-24">Ack Time</th>
-              <th className="pure-u-6-24">Ended</th>
             </tr>
           </thead>
         </table>
