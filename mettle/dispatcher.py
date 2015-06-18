@@ -68,6 +68,7 @@ def on_pipeline_run_nack(settings, rabbit, db, data):
     if data['reannounce_time'] is None:
         rtime = None
         # If reannounce_time is None, then give up on this pipeline run.
+        run.ack_time = utc.now()
         run.end_time = utc.now()
     else:
         rtime = isodate.parse_datetime(data['reannounce_time'])
