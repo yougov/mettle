@@ -23,7 +23,7 @@ DEV_USERNAME = 'dev_user'
 DEFAULTS = {
     'db_url': 'postgresql://postgres@/mettle',
 
-    'enable_static_hashing': True,
+    'enable_static_hashing': False,
 
     # new log messages within the last job_log_lookback_minutes will indicate
     # that a job is still alive and kicking, even if it's past its expiration
