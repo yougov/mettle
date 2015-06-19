@@ -1,25 +1,8 @@
-
 import os
-import hashlib
 from pkg_resources import resource_filename
 
 from spa import Handler, Response
-
-CSS_FILES = [
-  'static/bower/pure/pure-min.css',
-  'static/font/roboto/stylesheet.css',
-  'static/css/mettle.css'
-]
-
-JS_FILES = [
-  'static/bower/lodash/lodash.min.js',
-  'static/bower/react/react.js',
-  'static/bower/react-router/build/global/ReactRouter.min.js',
-  'static/bower/graphlib/dist/graphlib.core.js',
-  'static/bower/dagre/dist/dagre.core.min.js',
-  'static/bower/reconnectingWebsocket/reconnecting-websocket.min.js',
-  'static/bower/superagent/superagent.js'
-]
+from spa.static.hashed import get_hash, add_hash_to_filepath
 
 TMPL = """
 <html>
@@ -38,42 +21,75 @@ TMPL = """
 </html>
 """
 
-DEV_SCRIPTS = """
-<!--API interaction-->
-<script src="/static/js/mettle.js" type="text/javascript"></script>
+CSS_FILES = [
+  'static/bower/pure/pure-min.css',
+  'static/font/roboto/stylesheet.css',
+  'static/css/mettle.css'
+]
 
-<!--UI-->
-<script src="/static/bower/react/JSXTransformer.js" type="text/javascript" charset="utf-8" ></script>
-<script src="/static/jsx/jobs.jsx" type="text/jsx"></script>
-<script src="/static/jsx/targets.jsx" type="text/jsx"></script>
-<script src="/static/jsx/runs.jsx" type="text/jsx"></script>
-<script src="/static/jsx/pipelines.jsx" type="text/jsx"></script>
-<script src="/static/jsx/services.jsx" type="text/jsx"></script>
-<script src="/static/jsx/notifications.jsx" type="text/jsx"></script>
-<script src="/static/jsx/app.jsx" type="text/jsx"></script>
-"""
+JS_FILES = [
+  'static/bower/lodash/lodash.min.js',
+  'static/bower/react/react.js',
+  'static/bower/react-router/build/global/ReactRouter.min.js',
+  'static/bower/graphlib/dist/graphlib.core.js',
+  'static/bower/dagre/dist/dagre.core.min.js',
+  'static/bower/reconnectingWebsocket/reconnecting-websocket.min.js',
+  'static/bower/superagent/superagent.js'
+]
+
+JS_PROD = [
+    'static/js/compiled.js',
+]
+
+JS_DEV = [
+    'static/js/mettle.js',
+    'static/bower/react/JSXTransformer.js',
+    'static/jsx/jobs.jsx',
+    'static/jsx/targets.jsx',
+    'static/jsx/runs.jsx',
+    'static/jsx/pipelines.jsx',
+    'static/jsx/services.jsx',
+    'static/jsx/notifications.jsx',
+    'static/jsx/app.jsx',
+]
+
 
 def hashfile(filename):
   filepath = resource_filename('mettle', filename)
   with open(filepath) as f:
-    data = f.read()
-  return hashlib.md5(data).hexdigest()[:8]
+    return get_hash(f)
 
-def generate_css_tag(filename):
-  return '<link rel="stylesheet" href="/{filename}?{hash}" />'.format(filename=filename, hash=hashfile(filename))
+def css_tag(path):
+    return '<link rel="stylesheet" href="/{path}" />'.format(path=path)
 
-def generate_js_tag(filename):
-  return '<script src="/{filename}?{hash}" type="text/javascript"></script>'.format(filename=filename, hash=hashfile(filename))
+def js_tag(path):
+    mime = 'text/jsx' if path.endswith('jsx') else 'text/javascript'
+    return '<script src="/{path}" type="{mime}"></script>'.format(path=path,
+                                                                  mime=mime)
 
-if os.path.isfile(resource_filename('mettle', 'static/js/compiled.js')):
-    JS_FILES.append('static/js/compiled.js')
-    HOME = TMPL.format(js_files="\n".join(generate_js_tag(s) for s in JS_FILES),
-                       css_files="\n".join(generate_css_tag(s) for s in CSS_FILES))
-else:
-    HOME = TMPL.format(js_files="\n".join(generate_js_tag(s) for s in JS_FILES)+DEV_SCRIPTS,
-                       css_files="\n".join(generate_css_tag(s) for s in CSS_FILES))
+def render_homepage(hashing_enabled):
+    if hashing_enabled:
+        js_files = [add_hash_to_filepath(l, hashfile(l)) for l in JS_FILES]
+        js_files += [add_hash_to_filepath(l, hashfile(l)) for l in JS_PROD]
+        css_files = [add_hash_to_filepath(l, hashfile(l)) for l in CSS_FILES]
+    else:
+        js_files = JS_FILES + JS_DEV
+        css_files = CSS_FILES
 
+    js = '\n'.join([js_tag(j) for j in js_files])
+    css = '\n'.join([css_tag(c) for c in css_files])
+    rendered = TMPL.format(js_files=js, css_files=css)
+    return rendered
+
+cache = {}
 
 class Index(Handler):
+
+    def __init__(self, app, *args, **kwargs):
+        self.settings = app.settings
+        super(Index, self).__init__(app, *args, **kwargs)
+
     def get(self):
-        return Response(HOME, content_type='text/html')
+        if 'home' not in cache:
+            cache['home'] = render_homepage(self.settings.enable_static_hashing)
+        return Response(cache['home'], content_type='text/html')

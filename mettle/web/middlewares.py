@@ -2,9 +2,9 @@
 
 class DummyAuthMiddleware(object):
 
-    def __init__(self, app, config):
+    def __init__(self, app, username):
         self.app = app
-        self.username = config['username']
+        self.username = username
 
     def __call__(self, environ, start_response):
         environ['beaker.session']['username'] = self.username

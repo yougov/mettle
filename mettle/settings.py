@@ -1,4 +1,5 @@
 import os
+import pkg_resources
 import random
 import string
 
@@ -22,6 +23,8 @@ DEV_USERNAME = 'dev_user'
 DEFAULTS = {
     'db_url': 'postgresql://postgres@/mettle',
 
+    'enable_static_hashing': True,
+
     # new log messages within the last job_log_lookback_minutes will indicate
     # that a job is still alive and kicking, even if it's past its expiration
     # date.
@@ -43,6 +46,8 @@ DEFAULTS = {
     # The RabbitMQ exchange where updates to Postgres tables are published.
     'state_exchange': 'mettle_state',
 
+    'static_dir': pkg_resources.resource_filename('mettle', 'static'),
+
     'timer_sleep_secs': 60,
     'web_worker_timeout': 30,
     'websocket_ping_interval': 1,
@@ -57,10 +62,11 @@ DEFAULTS = {
     # YOU MUST override this setting in production to provide your own session
     # key.
     'wsgi_middlewares': [
+        ('spa.middlewares.GzipMiddleware', {}),
         ('mettle.web.middlewares.DummyAuthMiddleware', {
             'username': DEV_USERNAME,
         }),
-        ('beaker.middleware.SessionMiddleware', {
+        ('beaker.middleware.SessionMiddleware', {'config': {
             'session.type': 'cookie',
             'session.cookie_expires': True,
             'session.key': 'mettle_session',
@@ -68,7 +74,7 @@ DEFAULTS = {
             'session.auto': True,
             # allow running locally without https
             'session.secure': False,
-        }),
+        }}),
     ]
 }
 

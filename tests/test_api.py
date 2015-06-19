@@ -10,12 +10,15 @@ from mettle.db import make_session_cls
 from mettle.web import make_app
 from mettle import models
 
+
 def get_db():
     settings = get_settings()
     return make_session_cls(settings.db_url)
 
+
 def randchars():
     return ''.join([random.choice(string.letters) for x in xrange(12)])
+
 
 def random_service(num_pipelines=1):
     svc = models.Service(

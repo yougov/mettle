@@ -2,10 +2,10 @@ from mettle.web.green import patch; patch()
 
 import os
 
-from werkzeug.wsgi import SharedDataMiddleware
 from sqlalchemy.orm import scoped_session
 
 import spa
+from spa.static import CacheBuster, StaticHandler
 
 from mettle.settings import get_settings
 from mettle.db import make_session_cls
@@ -14,50 +14,59 @@ from mettle.web.views import (logs, services, pipelines, runs, targets, index,
 from mettle.web.wrappers import MettleRequest
 
 
-routes = [
-    # The one view that returns HTML.  Everything else is JSON API.
-    ('/', 'index', index.Index),
+def build_routes(settings):
+    routes = [
+        # The one view that returns HTML.  Everything else is JSON API.
+        ('/', 'index', index.Index),
 
-    # Global notifications
-    ('/api/notifications/', 'notification_list', notifications.List),
-    ('/api/notifications/<int:notification_id>/', 'notification_detail', notifications.Detail),
+        # Global notifications
+        ('/api/notifications/', 'notification_list', notifications.List),
+        ('/api/notifications/<int:notification_id>/', 'notification_detail', notifications.Detail),
 
-    # Services
-    ('/api/services/', 'service_list', services.ServiceList),
-    ('/api/services/<service_name>/', 'service_detail', services.ServiceDetail),
-    ('/api/services/<service_name>/notifications/', 'service_notifications',
-     notifications.ByService),
+        # Services
+        ('/api/services/', 'service_list', services.ServiceList),
+        ('/api/services/<service_name>/', 'service_detail', services.ServiceDetail),
+        ('/api/services/<service_name>/notifications/', 'service_notifications',
+         notifications.ByService),
 
 
-    # Pipelines
-    ('/api/services/<service_name>/pipelines/', 'pipeline_list',
-     pipelines.PipelineList),
-    ('/api/services/<service_name>/pipelines/<pipeline_name>/',
-     'pipeline_detail', pipelines.PipelineDetails),
-    ('/api/services/<service_name>/pipelines/<pipeline_name>/notifications/',
-     'pipeline_notifications', notifications.ByPipeline),
+        # Pipelines
+        ('/api/services/<service_name>/pipelines/', 'pipeline_list',
+         pipelines.PipelineList),
+        ('/api/services/<service_name>/pipelines/<pipeline_name>/',
+         'pipeline_detail', pipelines.PipelineDetails),
+        ('/api/services/<service_name>/pipelines/<pipeline_name>/notifications/',
+         'pipeline_notifications', notifications.ByPipeline),
 
-    # Runs
-    ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/',
-     'run_list', runs.RunList),
-    ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/',
-     'run_detail', runs.RunDetails),
-    ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/logs/',
-     'run_logs', logs.Log),
-    ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/notifications/',
-    'run_notifications', notifications.ByRun),
+        # Runs
+        ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/',
+         'run_list', runs.RunList),
+        ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/',
+         'run_detail', runs.RunDetails),
+        ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/logs/',
+         'run_logs', logs.Log),
+        ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/notifications/',
+        'run_notifications', notifications.ByRun),
 
-    # Jobs
-    ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/jobs/',
-     'run_job_list', runs.RunJobs),
-    ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/jobs/<int:job_id>/',
-     'run_job_detail', runs.RunJob),
-    ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/jobs/<int:job_id>/logs/',
-     'run_job_logs', logs.Log),
-    ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/targets/<target>/jobs/',
-     'target_job_list', targets.TargetJobs),
+        # Jobs
+        ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/jobs/',
+         'run_job_list', runs.RunJobs),
+        ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/jobs/<int:job_id>/',
+         'run_job_detail', runs.RunJob),
+        ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/jobs/<int:job_id>/logs/',
+         'run_job_logs', logs.Log),
+        ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/targets/<target>/jobs/',
+         'target_job_list', targets.TargetJobs),
+    ]
 
-]
+    if settings.enable_static_hashing:
+        routes.append(('/static/<path:filepath>', 'static',
+                       CacheBuster(settings.static_dir)))
+    else:
+        routes.append(('/static/<path:filepath>', 'static', StaticHandler,
+                      {'directory': settings.static_dir}))
+
+    return routes
 
 
 def import_class(path):
@@ -71,19 +80,18 @@ def import_class(path):
 
 def make_app():
     settings = get_settings()
+    routes = build_routes(settings)
     app = spa.App(routes, settings, request_class=MettleRequest)
     app.db = scoped_session(make_session_cls(settings.db_url))
-    app = SharedDataMiddleware(app, {
-        '/static': ('mettle', 'static')
-    })
     for cls_string, config in settings.wsgi_middlewares:
         cls = import_class(cls_string)
-        app = cls(app, config)
+        app = cls(app, **config)
     return app
 
 
 if 'app' not in globals():
     app = make_app()
+
 
 if __name__ == "__main__":
     from gevent import pywsgi
