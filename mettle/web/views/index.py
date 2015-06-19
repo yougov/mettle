@@ -37,9 +37,7 @@ JS_FILES = [
   'static/bower/superagent/superagent.js'
 ]
 
-JS_PROD = [
-    'static/js/compiled.js',
-]
+COMPILED_JS = 'static/js/compiled.js'
 
 JS_DEV = [
     'static/js/mettle.js',
@@ -68,12 +66,15 @@ def js_tag(path):
                                                                   mime=mime)
 
 def render_homepage(hashing_enabled):
-    if hashing_enabled:
-        js_files = [add_hash_to_filepath(l, hashfile(l)) for l in JS_FILES]
-        js_files += [add_hash_to_filepath(l, hashfile(l)) for l in JS_PROD]
-        css_files = [add_hash_to_filepath(l, hashfile(l)) for l in CSS_FILES]
+    if os.path.isfile(COMPILED_JS):
+        js_files = JS_FILES + [COMPILED_JS]
     else:
         js_files = JS_FILES + JS_DEV
+
+    if hashing_enabled:
+        js_files = [add_hash_to_filepath(l, hashfile(l)) for l in js_files]
+        css_files = [add_hash_to_filepath(l, hashfile(l)) for l in CSS_FILES]
+    else:
         css_files = CSS_FILES
 
     js = '\n'.join([js_tag(j) for j in js_files])
