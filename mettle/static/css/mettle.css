@@ -447,7 +447,7 @@ keyframes fadesomefails {
 
 /* REUSABLE COMPONENTS */
 
-.entity-table .action {
+.summary .action, .entity-table .action {
   float: right;
   text-align: right;
 }
