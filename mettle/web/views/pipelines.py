@@ -4,7 +4,7 @@ import logging
 from spa import JSONResponse
 from spa import exceptions
 
-from mettle.models import Pipeline, Service, PipelineRun
+from mettle.models import Pipeline, Service, PipelineRun, NotificationList
 from mettle.web.framework import ApiView
 
 logger = logging.getLogger(__name__)
@@ -12,6 +12,10 @@ logger.setLevel(logging.INFO)
 
 
 def pipeline_summary(pipeline, runs=None, notifications=None):
+
+    last_run = pipeline.last_run_time()
+    next_run = pipeline.next_run_time()
+
     data = dict(
         id=pipeline.id,
         name=pipeline.name,
@@ -21,10 +25,8 @@ def pipeline_summary(pipeline, runs=None, notifications=None):
         retries=pipeline.retries,
         crontab=pipeline.crontab,
         chained_from_id=pipeline.chained_from_id,
-        next_run_time=(pipeline.next_run_time().isoformat() if
-                       pipeline.next_run_time else None),
-        last_run_time=(pipeline.last_run_time().isoformat() if
-                       pipeline.last_run_time else None),
+        next_run_time=(next_run.isoformat() if next_run else None),
+        last_run_time=(last_run.isoformat() if last_run else None),
     )
 
     if runs is not None:
@@ -90,6 +92,36 @@ class PipelineList(ApiView):
             self.pipelines[pipeline_name]['runs'][parsed['id']] = parsed
         self.ws.send(json.dumps(self.pipelines[pipeline_name]))
 
+    def post(self, service_name):
+        service = self.db.query(Service).filter_by(name=service_name).one()
+        data = self.request.json()
+
+        # name must match one of the pipeline_names in the service
+        assert data['name'] in service.pipeline_names, 'Invalid pipeline name'
+
+        pipeline = Pipeline(
+            name=data['name'],
+            notification_list_id=data['notification_list_id'],
+            crontab=data.get('crontab'),
+            chained_from_id=data.get('chained_from_id'),
+            service=service,
+            updated_by=self.request.session['username'],
+        )
+
+        # optional field
+        if 'retries' in data:
+            pipeline.retries = data['retries']
+
+        self.db.add(pipeline)
+        self.db.commit()
+
+        url = self.app.url('pipeline_detail', dict(
+            service_name=service_name,
+            pipeline_name=pipeline.name,
+        ))
+
+        return JSONResponse(pipeline.as_dict(), headers={'Location': url},
+                            status=302)
 
 class PipelineDetails(ApiView):
     def get(self, service_name, pipeline_name):

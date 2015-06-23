@@ -74,6 +74,9 @@ class NotificationList(Base):
 
 class Pipeline(Base):
     __tablename__ = 'pipelines'
+
+    DEFAULT_RETRIES = 3
+
     id = Column(Integer, primary_key=True)
     name = Column(Text, nullable=False)
     service_id = Column(Integer, ForeignKey('services.id'), nullable=False)
@@ -82,7 +85,7 @@ class Pipeline(Base):
     updated_by = Column(Text, nullable=False)
     active = Column(Boolean, nullable=False, server_default=text('true'))
 
-    retries = Column(Integer, default=3)
+    retries = Column(Integer, default=DEFAULT_RETRIES)
 
     service = relationship("Service", backref=backref('pipelines', order_by=name))
     notification_list = relationship('NotificationList',

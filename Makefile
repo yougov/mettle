@@ -64,7 +64,7 @@ mettle/static/bower: $(BIN)/bower
 	cd mettle/static; bower install --config.interactive=0
 
 $(BIN)/mettle:
-	pip install -e . -i http://cheese.yougov.net
+	pip install -e .
 
 migrate: $(BIN)/mettle
 	mettle migrate

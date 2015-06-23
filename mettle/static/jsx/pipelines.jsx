@@ -134,8 +134,16 @@
       if (routes[routes.length-1].name === 'Pipeline') {
         // we're the last thing in the path.  Render!
         return (<div className="pure-u-1 pure-g l-box">
-          <PipelineSummary className="pure-u-1-4 gutter" serviceName={serviceName} pipelineName={pipelineName} />
-          <Mettle.components.RunsList className="pure-u-3-4" serviceName={serviceName} pipelineName={pipelineName} />
+          <PipelineSummary
+            className="pure-u-1-4 gutter"
+            serviceName={serviceName}
+            pipelineName={pipelineName}
+          />
+          <Mettle.components.RunsList
+            className="pure-u-3-4"
+            serviceName={serviceName}
+            pipelineName={pipelineName}
+          />
           </div>);
       } else {
         // we're not the last thing in the path.  delegate!
@@ -201,7 +209,11 @@
         "Retries": this.state.retries,
         "Updated By": this.state.updated_by
       });
-      return <Mettle.components.SummaryTable caption="Pipeline Info" className={this.props.className} id={this.state.id} data={summary} />;
+      return <Mettle.components.SummaryTable
+          caption="Pipeline Info"
+          className={this.props.className}
+          id={this.state.id} data={summary}
+        />;
     }
   });
 

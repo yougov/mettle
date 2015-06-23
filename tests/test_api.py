@@ -146,3 +146,40 @@ def test_cannot_change_pipeline_svc():
     )
     resp = c.put(url, data=json.dumps(new_data), content_type='application/json')
     assert resp.status_code == 400
+
+
+def test_new_crontab_pipeline():
+    db = get_db()()
+    svc = random_service()
+    nl = random_notification_list()
+    db.add(svc)
+    db.add(nl)
+    db.commit()
+    app = make_app()
+    c = Client(app, Resp)
+    url = unwrap_app(app).url('pipeline_list', dict(
+        service_name=svc.name,
+    ))
+
+    data = dict(
+        name=svc.pipeline_names[0],
+        notification_list_id=nl.id,
+        retries=4,
+        crontab='0 0 0 1 1',
+    )
+    resp = c.post(url, data=json.dumps(data), content_type='application/json')
+    assert resp.status_code == 302
+
+    url = unwrap_app(app).url('pipeline_detail', dict(
+        service_name=svc.name,
+        pipeline_name=svc.pipeline_names[0],
+    ))
+    assert resp.headers['Location'] == 'http://localhost' + url
+
+    content = json.loads(resp.data)
+    for k, v in data.items():
+        assert content[k] == v
+
+#def test_new_crontab_chained
+
+#def test_retries_default
