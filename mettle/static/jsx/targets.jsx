@@ -12,12 +12,14 @@
 
     render: function() {
       var params=this.getParams();
-      var inside = this.getParams().jobId ? <RouteHandler /> : <Mettle.components.JobsList serviceName={params.serviceName} pipelineName={params.pipelineName} runId={params.runId} target={params.target} />;
-      return (
-      <div>
-        {inside}
-      </div>
-      );
+      if (this.getParams().jobId) {
+        return <RouteHandler />;
+      }
+      return <Mettle.components.JobsList
+              serviceName={params.serviceName}
+              pipelineName={params.pipelineName}
+              runId={params.runId}
+              target={params.target} />;
     }
   });
 

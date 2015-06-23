@@ -33,8 +33,8 @@ class Log(ApiView):
             # We've been told to only return a number of the most recent lines.
             # Do that by reversing the ordering in the query, imposing a limit,
             # running the query, and then reversing the order again in Python.
-            lines = lines.order_by(JobLogLine.job_id.desc(),
-                                   JobLogLine.line_num.desc()).limit(tail)
+            lines = lines.order_by(JobLogLine.line_num.desc())
+            lines = lines.limit(tail)
             lines = reversed(list(lines))
 
         return lines

@@ -22,6 +22,7 @@ DEV_USERNAME = 'dev_user'
 
 DEFAULTS = {
     'db_url': 'postgresql://postgres@/mettle',
+    'db_log': False,
 
     'enable_static_hashing': False,
 
@@ -37,6 +38,8 @@ DEFAULTS = {
     'max_log_days': 14,
 
     'rabbit_url': 'amqp://guest:guest@127.0.0.1:5672/%2f',
+
+    'show_tracebacks': True,
 
     # To enable sending of notification emails on pipeline failures, set this to
     # a host:port string like "mymailserver.com:25"

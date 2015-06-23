@@ -103,7 +103,6 @@
       }.bind(this));
       return (
       <div className="pure-u-1">
-        <h1 className="page-header"><Link to="App">Home</Link><Breadcrumbs /><span>Notifications</span></h1>
         <table className="table">
           <thead>
             <tr className="pure-g">

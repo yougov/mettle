@@ -6,7 +6,7 @@ BIN=$(shell dirname `which python`)
 STATIC_DIR=mettle/static
 JSX_DIR=$(STATIC_DIR)/jsx
 # Our React components have dependencies on each other.  This ordering is important.
-JSX_MODULES=jobs targets runs pipelines services app
+JSX_MODULES=common jobs targets runs pipelines services app
 JSX_TARGETS=$(foreach module,$(JSX_MODULES),$(JSX_DIR)/$(module).js)
 
 dbsetup:

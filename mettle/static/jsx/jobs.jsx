@@ -61,55 +61,107 @@
     },
 
     render: function() {
-      var nodes = _.map(_.sortByOrder(this.state.jobs, ['id'], [false]), function(job) {
-        var params = this.getParams();
-        params['jobId'] = job.id;
-        params['createdTime'] = new Date(job.created_time).toLocaleString(),
-        params['startTime'] = new Date(job.start_time).toLocaleString(),
-        params['endTime'] = new Date(job.end_time).toLocaleString()
-        return (
-          <div className={job.succeeded ? 'run pure-g' : 'run pure-g warning'} key={'job-link-' + job.id}>
-            <div className="pure-u-1-24"><Link to="Job" params={params}><div className="circle"></div></Link></div>
-            <div className="pure-u-5-24"><Link to="Job" params={params}>{job.id}</Link></div>
-            <div className="pure-u-6-24"><Link to="Job" params={params}>{params.createdTime}</Link></div>
-            <div className="pure-u-6-24"><Link to="Job" params={params}>{params.startTime}</Link></div>
-            <div className="pure-u-6-24"><Link to="Job" params={params}>{params.endTime}</Link></div>
-          </div>);
-      }, this);
-      return (
-      <div className="pure-u-1">
-        <table className="table">
-          <thead>
-            <tr className="pure-g">
-              <th className="pure-u-1-24"></th>
-              <th className="pure-u-5-24">ID</th>
-              <th className="pure-u-6-24">Created</th>
-              <th className="pure-u-6-24">Started</th>
-              <th className="pure-u-6-24">Ended</th>
-            </tr>
-          </thead>
-        </table>
-        {nodes}
-      </div>
-      );
+
+
+      var headers = {
+        '': 'status',
+        'ID': 'id',
+        'Created': 'created_time',
+        'Started': 'start_time',
+        'Ended': 'end_time',
+        'Host': 'host',
+        'PID': 'pid'
+      };
+      
+      var rows = _.map(this.state.jobs, function(data) {
+        var status = 'ok';
+
+        if (data.end_time) {
+          if (!data.succeeded) {
+            status = 'error';
+          }
+        } else {
+          status = 'pending';
+        }
+
+        data = _.extend(data, this.getParams());
+        data.status = <Mettle.components.StatusLight status={status} />;
+        data.jobId = data.id;
+        return data;
+      }, this); 
+
+      return <Mettle.components.EntityTable
+              className={this.props.className}
+              caption='Jobs'
+              headers={headers}
+              rows={rows}
+              linkTo='Job'
+              idKey='id'
+            />;
     }
   });
 
   var Job = Mettle.components.Job = React.createClass({
     mixins: [Router.State],
+
+    getInitialState: function () {
+      return {
+        succeeded: false
+      };
+    },
+
+    componentWillUnmount: function () {
+      this.cleanup();
+    },
+
+    componentDidMount: function() {
+      this.getData();
+    },
+
+    cleanup: function() {
+      if (this.ws) {
+        this.ws.close();
+        this.ws = undefined;
+      }
+    },
+
+    getData: function() {
+      var params = this.getParams()
+      this.ws = Mettle.getJobStream(params.serviceName, params.pipelineName, params.runId, params.jobId);
+      this.ws.onmessage = this.onJobData;
+    },
+
+    onJobData: function(ev) {
+      this.setState(JSON.parse(ev.data));
+    },
+
     render: function() {
       var params = this.getParams();
-      return (<div>
-              <table className="table">
-                <thead>
-                  <tr className="pure-g">
-                    <th className="pure-u-1-24"></th>
-                    <th className="pure-u-23-24">Job Log</th>
-                  </tr>
-                </thead>
-              </table>
-              <JobLog serviceName={params.serviceName} pipelineName={params.pipelineName} runId={params.runId} jobId={params.jobId} />
-              </div>);
+      var summary = {
+        "Target": this.state.target,
+        "Succeeded": this.state.succeeded.toString(),
+        "Created": Mettle.formatDate(this.state.created_time),
+        "Started": Mettle.formatDate(this.state.start_time),
+        "Ended": Mettle.formatDate(this.state.end_time),
+        "Host": this.state.host,
+        "PID": this.state.pid
+      };
+      return (
+        <div className="pure-u-1 pure-g">
+          <Mettle.components.SummaryTable
+            caption="Info"
+            className="pure-u-1-3 gutter"
+            data={summary}
+          /> 
+          <JobLog
+            className="pure-u-2-3"
+            serviceName={params.serviceName}
+            pipelineName={params.pipelineName}
+            runId={params.runId}
+            jobId={params.jobId}
+          />
+        </div>
+     );
     }
   });
 
@@ -157,15 +209,12 @@
     },
 
     render: function() {
-      var lines = _.sortBy(this.state.lines, 'line_num');
-      var nodes = _.map(lines, function(line) {
-        return (
-          <div className='pure-g'>
-            <div className="pure-u-1-24">{line.line_num + 1}</div>
-            <div className="pure-u-23-24">{line.msg}</div>
-          </div>);
-      });
-      return <div className="log pure-u-1">{nodes}</div>;
+
+      return <Mettle.components.Log
+          className={this.props.className}
+          caption="Log" 
+          lines={this.state.lines}
+        />
     }
   });
 })();

@@ -13,7 +13,7 @@ TMPL = """
     {css_files}
   </head>
   <body>
-    <div id="content" class="pure-g"></div>
+    <div id="content"></div>
 
     <!--libraries-->
     {js_files}
@@ -34,7 +34,8 @@ JS_FILES = [
   'static/bower/graphlib/dist/graphlib.core.js',
   'static/bower/dagre/dist/dagre.core.min.js',
   'static/bower/reconnectingWebsocket/reconnecting-websocket.min.js',
-  'static/bower/superagent/superagent.js'
+  'static/bower/superagent/superagent.js',
+  'static/bower/moment/moment.js',
 ]
 
 COMPILED_JS = 'static/js/compiled.js'
@@ -42,6 +43,7 @@ COMPILED_JS = 'static/js/compiled.js'
 JS_DEV = [
     'static/js/mettle.js',
     'static/bower/react/JSXTransformer.js',
+    'static/jsx/common.jsx',
     'static/jsx/jobs.jsx',
     'static/jsx/targets.jsx',
     'static/jsx/runs.jsx',
@@ -66,7 +68,7 @@ def js_tag(path):
                                                                   mime=mime)
 
 def render_homepage(hashing_enabled):
-    if os.path.isfile(COMPILED_JS):
+    if os.path.isfile(resource_filename('mettle', COMPILED_JS)):
         js_files = JS_FILES + [COMPILED_JS]
     else:
         js_files = JS_FILES + JS_DEV
@@ -82,7 +84,9 @@ def render_homepage(hashing_enabled):
     rendered = TMPL.format(js_files=js, css_files=css)
     return rendered
 
+
 cache = {}
+
 
 class Index(Handler):
 
@@ -93,4 +97,8 @@ class Index(Handler):
     def get(self):
         if 'home' not in cache:
             cache['home'] = render_homepage(self.settings.enable_static_hashing)
-        return Response(cache['home'], content_type='text/html')
+        resp = Response(cache['home'], content_type='text/html')
+        # Set a plain cookie so the UI can display a username without having to
+        # unpack our weird session cookie.
+        resp.set_cookie('display_name', self.request.session['username'])
+        return resp

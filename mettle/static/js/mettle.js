@@ -63,6 +63,10 @@
     return getRunURL(serviceName, pipelineName, runId) + 'jobs/';
   };
 
+  var getJobURL = function(serviceName, pipelineName, runId, jobId) {
+    return getRunJobsURL(serviceName, pipelineName, runId) + jobId + '/';
+  };
+
   var getJobLogURL = function(serviceName, pipelineName, runId, jobId, tail) {
     return getRunJobsURL(serviceName, pipelineName, runId) + jobId + '/logs/?tail=' + tail;
   };
@@ -77,6 +81,14 @@
 
   Mettle.getServicesStream = function() {
     return new ReconnectingWebSocket(WSPREFIX + getServicesURL());
+  };
+
+  Mettle.getServiceStream = function(serviceName) {
+    return new ReconnectingWebSocket(WSPREFIX + getServiceURL(serviceName));
+  };
+
+  Mettle.getPipelineStream = function(serviceName, pipelineName) {
+    return new ReconnectingWebSocket(WSPREFIX + getPipelineURL(serviceName, pipelineName));
   };
 
   Mettle.getPipelines = function (serviceName, cb) {
@@ -124,6 +136,11 @@
     var url = WSPREFIX + getTargetJobsURL(serviceName, pipelineName, runId, target);
     return new ReconnectingWebSocket(url);
   };
+  
+  Mettle.getJobStream = function(serviceName, pipelineName, runId, jobId) {
+    var url = WSPREFIX + getJobURL(serviceName, pipelineName, runId, jobId); 
+      return new ReconnectingWebSocket(url);
+  };
 
   Mettle.getJobLogStream = function(serviceName, pipelineName, runId, jobId, tail) {
     var url = WSPREFIX + getJobLogURL(serviceName, pipelineName, runId, jobId, tail); 
@@ -155,4 +172,10 @@
     return request.post(url).send({acknowledged: true});
   };
 
+  Mettle.formatDate = function(d) {
+    if (!d) {
+      return '';
+    }
+    return moment(d).format("YYYY-DD-MM hh:mm");
+  };
 })(window);

@@ -11,10 +11,22 @@
     }
   });
 
+  CurrentUser = React.createClass({
+    getCookie: function (sKey) {
+      if (!sKey) { return null; }
+      return decodeURIComponent(document.cookie.replace(new RegExp("(?:(?:^|.*;)\\s*" + encodeURIComponent(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*([^;]*).*$)|^.*$"), "$1")) || null;
+  },
+
+    render: function() {
+      var username =  this.getCookie('display_name');
+      return (<div className="current-user">Logged in as {username}. <a href="/logout/">Log out</a></div>)
+    }
+  });
+
   Breadcrumbs = React.createClass({
     mixins: [Router.State],
     render: function() {
-      var links = [];
+      var links = [<li key="home"><Link to="App">Home</Link></li>];
       var params = this.getParams();
 
       if (params.serviceName) {
@@ -42,19 +54,21 @@
           }
         }
       }
-      return (<ul className="mettle-nav list-inline ">{links}</ul>);
+      return (<h1 className={"breadcrumbs " + this.props.className}><ul className={"list-inline "}>{links}</ul></h1>);
     }
   });
 
   App = React.createClass({
     mixins: [Router.State],
     render: function () {
-      var inside = this.getParams().serviceName ? <RouteHandler /> : <Mettle.components.ServicesList />;
+      var inside = this.getParams().serviceName ? <RouteHandler /> : <Mettle.components.ServicesList className="pure-u-1 l-box" />;
       return (
-        <div className="pure-u-1">
-          <header className="pure-u-1">
+        <div className="pure-g">
+          <header className="pure-u-1 l-box">
             <h1 className="title"><Link to="App">Mettle</Link></h1>
+            <CurrentUser />
           </header>
+          <Breadcrumbs className="pure-u-1 l-box" />
           {inside} 
         </div>
       );
@@ -64,12 +78,17 @@
   var routes = (
     <Route name="App" path="/" handler={App}>
       <Route name="Service" path="services/:serviceName/" handler={Mettle.components.Service}>
-        <Route name="ServiceNotifications" path="notifications/" handler={Mettle.components.Notifications} />
-        <Route name="Pipeline" path="pipelines/:pipelineName/" handler={Mettle.components.Pipeline}>
-          <Route name="PipelineNotifications" path="notifications/" handler={Mettle.components.Notifications} />
+        <Route name="ServiceNotifications" path="notifications/"
+          handler={Mettle.components.Notifications} />
+        <Route name="Pipeline" path="pipelines/:pipelineName/"
+          handler={Mettle.components.Pipeline}>
+          <Route name="PipelineNotifications" path="notifications/"
+            handler={Mettle.components.Notifications} />
+          <Route name="EditPipeline" path="edit/" handler={Mettle.components.EditPipeline} />
           <Route name="NewRun" path="runs/new/" handler={Mettle.components.NewRun} />
           <Route name="PipelineRun" path="runs/:runId/" handler={Mettle.components.PipelineRun}>
-            <Route name="PipelineRunNotifications" path="notifications/" handler={Mettle.components.Notifications} />
+            <Route name="PipelineRunNotifications" path="notifications/"
+              handler={Mettle.components.Notifications} />
             <Route name="Target" path="targets/:target/" handler={Mettle.components.Target}>
               <Route name="Job" path="jobs/:jobId/" handler={Mettle.components.Job} />
             </Route>

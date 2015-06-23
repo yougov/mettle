@@ -1,10 +1,14 @@
+import json
+import logging
+
 import iso8601
 from spa import JSONResponse
-from werkzeug.utils import redirect
+from sqlalchemy.orm.attributes import InstrumentedAttribute
 
 from mettle.web.framework import ApiView
-from mettle.models import Job, PipelineRun, Pipeline, Service
+from mettle.models import Job, PipelineRun, PipelineRunNack, Pipeline, Service
 
+logging.basicConfig()
 
 class RunList(ApiView):
     def get(self, service_name, pipeline_name):
@@ -112,14 +116,42 @@ class RunNacks(ApiView):
 
 
 class RunJob(ApiView):
-    def get(self, service_name, pipeline_name, run_id, job_id):
+    def get_job(self, service_name, pipeline_name, run_id, job_id):
+        q = self.db.query(Job).join(
+                PipelineRun).join(Pipeline).join(Service).filter(
+                    Service.name==service_name,
+                    PipelineRun.pipeline_id==Pipeline.id,
+                    Job.pipeline_run_id==run_id,
+                    Job.id==job_id
+                )
+        return q.one()
 
-        job = self.db.query(Job).join(
-            PipelineRun).join(Pipeline).join(Service).filter(
-                Service.name==service_name,
-                PipelineRun.pipeline_id==Pipeline.id,
-                Job.pipeline_run_id==run_id,
-                Job.id==job_id
-            ).one()
+    def get(self, *args, **kwargs):
+        return JSONResponse(self.get_job(*args, **kwargs).as_dict())
 
-        return JSONResponse(job.as_dict())
+    def websocket(self, service_name, pipeline_name, run_id, job_id):
+        job = self.get_job(service_name, pipeline_name, run_id, job_id)
+        self.ws.send(json.dumps(job.as_dict()))
+
+        exchange = self.app.settings['state_exchange']
+        routing_key = ('services.%s.pipelines.%s.runs.%s.jobs.%s' %
+                       (service_name, pipeline_name, run_id, job_id))
+
+        self.bind_queue_to_websocket(exchange, [routing_key])
+
+    def on_rabbit_message(self, ch, method, props, body):
+        # The as_dict() method for this particular model doesn't make any extra
+        # requests, so this should be cheap.  If it ever changes we might need
+        # to revisit this.
+        data = json.loads(body)
+
+        # there may be keys in the dict that don't directly correspond to model
+        # attributes.  filter them out, then feed the rest into a new model
+        # instance
+        model_attrs = {}
+        for k, v in data.items():
+            attr = getattr(Job, k, None)
+            if isinstance(attr, InstrumentedAttribute):
+                model_attrs[k] = v
+        job = Job(**model_attrs)
+        self.ws.send(json.dumps(job.as_dict()))

@@ -82,7 +82,8 @@ def make_app():
     settings = get_settings()
     routes = build_routes(settings)
     app = spa.App(routes, settings, request_class=MettleRequest)
-    app.db = scoped_session(make_session_cls(settings.db_url))
+    app.db = scoped_session(make_session_cls(settings.db_url,
+                                             echo=settings.db_log))
     for cls_string, config in settings.wsgi_middlewares:
         cls = import_class(cls_string)
         app = cls(app, **config)

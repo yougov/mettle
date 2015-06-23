@@ -71,53 +71,93 @@
     },
 
     render: function () {
-      var notifications = this.state.notifications;
-      var services = _.map(this.state.services, function(service) {
-        if(!service.pipeline_names) service.pipeline_names = [];
-        return (
-        <div className={Object.size(notifications[service.name])==0 ? 'service pure-g' : 'service pure-g warning'} key={'service-'+service.name}>          
-          <div className="pure-u-1-24"><Link to="Service" params={{serviceName: service.name}}><div className="circle"></div></Link></div>
-          <div className="pure-u-12-24"><Link to="Service" params={{serviceName: service.name}}>{service.name}</Link></div>
-          <div className="pure-u-6-24"><Link to="Service" params={{serviceName: service.name}}>{service.updated_by}</Link></div>
-          <div className="pure-u-2-24"><Link to="Service" params={{serviceName: service.name}}>{service.pipeline_names ? service.pipeline_names.length : 0}</Link></div>
-          <div className="pure-u-3-24 notifications"><Link to="ServiceNotifications" params={{serviceName: service.name}} className="badge">{Object.size(notifications[service.name])}</Link></div>
-        </div>
-        );
-      });
-      return (
-      <div className="pure-u-1">
-        <h1 className="page-header">Services</h1>
-        <table className="table">
-          <thead>
-            <tr className="pure-g">
-              <th className="pure-u-1-24"></th>
-              <th className="pure-u-12-24">Name</th>
-              <th className="pure-u-6-24">Updated By</th>
-              <th className="pure-u-2-24">Pipelines</th>
-              <th className="pure-u-3-24">Notifications</th>
-            </tr>
-          </thead>
-        </table>
-        {services}
-      </div>
-      );
+
+      var headers = {
+        'Name': 'name',
+        'Updated By': 'updated_by',
+        'Pipelines': 'pipeline_count',
+        'Notifications': 'notification_count'
+      };
+
+      var rows = _.map(this.state.services, function(svc) {
+        if(!svc.pipeline_names) svc.pipeline_names = [];
+        svc.pipeline_count = svc.pipeline_names.length;
+        svc.notifications = Object.size(this.state.notifications[svc.name]);
+        svc.serviceName = svc.name; // for url creation
+        return svc;
+      }, this);
+
+      return <Mettle.components.EntityTable
+            className={this.props.className}
+            caption="Services"
+            headers={headers}
+            rows={rows}
+            linkTo="Service"
+            idKey="id"
+          />;
     }
   });
 
   var Service = Mettle.components.Service = React.createClass({
     mixins: [Router.State],
-    render: function() {
-      var inside;
-      if(/notifications/g.test(this.getPath())) {
-        inside = <Mettle.components.Notifications serviceName={this.getParams().serviceName} />
-      } else {
-        inside = this.getParams().pipelineName ? <RouteHandler /> : <Mettle.components.PipelinesList serviceName={this.getParams().serviceName} />;
+    getInitialState: function() {
+      return {
+        pipeline_names: []
+      };
+    },
+
+    componentDidMount: function() {
+      this.cleanup();
+      this.ws = Mettle.getServiceStream(this.getParams().serviceName);
+      this.ws.onmessage = this.onServiceData;
+    },
+
+    cleanup: function() {
+      if (this.ws) {
+        this.ws.close();
+        this.ws = undefined;
       }
+    },
+
+    componentWillUnmount: function () {
+      this.cleanup();
+    },
+
+    onServiceData: function(ev) {
+      this.setState(JSON.parse(ev.data));
+    },
+
+    render: function() {
+      if(/notifications/g.test(this.getPath())) {
+        return <Mettle.components.Notifications serviceName={this.getParams().serviceName} />;
+      }
+
+      if (this.getParams().pipelineName) {
+        return <RouteHandler />;
+      }
+
+      var summary = {
+        "Name": this.state.name,
+        "Updated By": this.state.updated_by,
+        "Provides": this.state.pipeline_names.join(", ")
+      };
+      
       return (
-        <div className="pure-u-1">
-        {inside}
+        <div className={"pure-u-1 pure-g l-box " + this.props.className}>
+
+          <Mettle.components.SummaryTable 
+            className="pure-u-1-4 gutter"
+            caption="Info"
+            data={summary}
+            subText={this.state.description}
+          />
+
+          <Mettle.components.PipelinesList
+            serviceName={this.getParams().serviceName}
+            className="pure-u-3-4"
+          />
         </div>
-        );
+      );
     }
   });
 

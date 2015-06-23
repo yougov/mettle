@@ -160,32 +160,36 @@
 
     render: function() {
       var key = 'run_' + this.getParams().runId
+      var summary = {
+        "Target Time": Mettle.formatDate(this.state.targetTime),
+        "Succeeded": this.state.succeeded.toString(),
+        "Started By": this.state.startedBy,
+        "Created Time": Mettle.formatDate(this.state.createdTime),
+        "Ack Time": Mettle.formatDate(this.state.ackTime),
+        "End Time": Mettle.formatDate(this.state.endTime)
+      };
       var inside;
 
       if (this.getParams().target) {
-        inside = <RouteHandler />;
-      } else {
-        inside = <div>
-            <table className="pure-table summary">
-              <tbody>
-              <tr><td>Target Time</td><td>{this.state.targetTime}</td></tr>
-              <tr><td>Succeeded</td><td>{this.state.succeeded.toString()}</td></tr>
-              <tr><td>Started By</td><td>{this.state.startedBy}</td></tr>
-              <tr><td>Created Time</td><td>{this.state.createdTime}</td></tr>
-              <tr><td>Ack Time</td><td>{this.state.ackTime}</td></tr>
-              <tr><td>End Time</td><td>{this.state.endTime}</td></tr>
-              </tbody>
-            </table>
-            <PipelineGraph graph={this.state.graph} targetJobs={this.state.targetJobs} pipeline={this.state.pipeline} nodeSize={this.nodeSize} key={key} />
-          </div>
+        return <RouteHandler />;
       }
-      
-      return (
-      <div className="pure-u-1">
-        <h1 className="page-header"><Link to="App">Home</Link><Breadcrumbs /></h1>
-        {inside}
-      </div>
-      )
+
+      return (<div className="pure-u-1 pure-g l-box">
+          <Mettle.components.SummaryTable
+            data={summary}
+            caption="Pipeline Run Info"
+            className="pure-u-1-4 gutter"
+          />
+          <PipelineGraph
+            graph={this.state.graph}
+            targetJobs={this.state.targetJobs}
+            pipeline={this.state.pipeline}
+            nodeSize={this.nodeSize}
+            key={key}
+            caption="Progress Graph"
+            className="pure-u-3-4"
+          />
+      </div>);
     }
   });
 
@@ -213,11 +217,12 @@
           var width = parseInt(graph.graph().width, 10) + this.props.nodeSize;
           var height = parseInt(graph.graph().height, 10) + this.props.nodeSize;
           return (
-              <div>
-                <svg width={width} height={height}>
-                  {graphNodes}
-                  {graphEdges}
-                </svg>
+              <div className={"gridblock " + this.props.className}>
+                <div className="gridhead">{this.props.caption}</div>
+                  <svg width={width} height={height}>
+                    {graphNodes}
+                    {graphEdges}
+                  </svg>
               </div>
           );
       }
@@ -348,12 +353,19 @@
     render: function() {
       var params = this.getParams();
       return (
-        <div>
-          <h1 className="page-header">
-            <Link to="App">Home</Link><Breadcrumbs />
-            <span>New Run</span>
-          </h1>
-          <NewRunForm serviceName={params.serviceName} pipelineName={params.pipelineName} onSubmit={this.onSubmit}/>
+        <div className="pure-u-1 pure-g l-box">
+          <Mettle.components.TextBlock 
+            className="pure-u-1-4 gutter"
+            caption="New Run"
+            text="Enter the date and time for a new run of this pipeline.  All times are UTC."
+          />
+          <NewRunForm
+            serviceName={params.serviceName}
+            pipelineName={params.pipelineName}
+            onSubmit={this.onSubmit}
+            className="gridblock pure-u-3-4"
+            caption="Details"
+          />
         </div>
       )}
   });
@@ -382,12 +394,21 @@
       var nowDate = now.getUTCFullYear() + "-" + this.pad(now.getUTCMonth() + 1, 2) + "-" + this.pad(now.getUTCDate(), 2);
       var nowTime = this.pad(now.getUTCHours(), 2) + ":" + this.pad(now.getUTCMinutes(), 2);
       return (
-        <form onSubmit={this.handleSubmit} className="pure-form">
-        <p>Enter the date and time for a new run of this pipeline.  All times are UTC.</p>
+        <form onSubmit={this.handleSubmit} className={"pure-form pure-form-stacked gridform " + this.props.className}>
           <fieldset>
-            <input type="date" ref="date" defaultValue={nowDate} />
-            <input type="time" ref="time" defaultValue={nowTime} />
-            <button type="submit" className="pure-button pure-button-primary">Submit</button>
+            <legend>{this.props.caption}</legend>
+            <div className="pure-control-group">
+              <label for="date">Date</label>
+              <input id="date" type="date" ref="date" defaultValue={nowDate} />
+            </div>
+            <div className="pure-control-group">
+              <label for="time">Time</label>
+              <input id="time" type="time" ref="time" defaultValue={nowTime} />
+            </div>
+
+            <div className="pure-controls">
+              <button type="submit" className="pure-button button-secondary">Submit</button>
+            </div>
           </fieldset>
         </form>
       );
@@ -452,52 +473,48 @@
     },
 
     render: function() {
-      var nodes = _.map(_.sortByOrder(this.state.runs, ['id'], [false]), function(data) {
-        var params = {
+      var headers = {
+        "": "status",
+        "ID": "runId",
+        "Target Time": "targetTime",
+        "Created": "createdTime",
+        "Ack Time": "ackTime",
+        "Ended": "endTime",
+        "Started By": "startedBy"
+      };
+
+      var rows = _.map(_.sortByOrder(this.state.runs, ['id'], [false]), function(data) {
+        var status = 'ok';
+        if (data.end_time) {
+          if (!data.succeeded) {
+            status = 'error';
+          }
+        } else {
+          status = 'pending';
+        }
+
+        return {
           serviceName: this.props.serviceName,
           pipelineName: this.props.pipelineName,
           runId: data.id,
-          targetTime: new Date(data.target_time).toLocaleString(),
-          createdTime: new Date(data.created_time).toLocaleString(),
-          ackTime: data.ack_time ? new Date(data.ack_time).toLocaleString() : '',
-          endTime: data.end_time ? new Date(data.end_time).toLocaleString() : ''
+          targetTime: Mettle.formatDate(data.target_time),
+          createdTime: Mettle.formatDate(data.created_time),
+          ackTime: data.ack_time ? Mettle.formatDate(data.ack_time) : '',
+          endTime: data.end_time ? Mettle.formatDate(data.end_time) : '',
+          startedBy: data.started_by,
+          status: <Mettle.components.StatusLight status={status} />
         };
-
-        return (
-          <div className={data.end_time && !data.succeeded ? 'run pure-g warning' : 'run pure-g'} key={"run-link-" + data.id}>
-            <div className="pure-u-2-24"><Link to="PipelineRun" params={params}><div className="circle"></div></Link></div>
-            <div className="pure-u-2-24"><Link to="PipelineRun" params={params}>{data.id}</Link></div>
-            <div className="pure-u-4-24"><Link to="PipelineRun" params={params}>{params.targetTime}</Link></div>
-            <div className="pure-u-4-24"><Link to="PipelineRun" params={params}>{params.createdTime}</Link></div>
-            <div className="pure-u-4-24"><Link to="PipelineRun" params={params}>{params.ackTime}</Link></div>
-            <div className="pure-u-4-24"><Link to="PipelineRun" params={params}>{params.endTime}</Link></div>
-            <div className="pure-u-4-24"><Link to="PipelineRun" params={params}>{data.started_by}</Link></div>
-          </div>);
       }, this);
 
-      return (
-      <div className="pure-u-1">
-        <h1 className="page-header">
-          <Link to="App">Home</Link><Breadcrumbs />
-          <span>Runs</span>
-          <Link to="NewRun" params={this.getParams()} className="new-button">New Run</Link>
-        </h1>
-        <table className="table">
-          <thead>
-            <tr className="pure-g">
-              <th className="pure-u-2-24"></th>
-              <th className="pure-u-2-24">ID</th>
-              <th className="pure-u-4-24">Target Time</th>
-              <th className="pure-u-4-24">Created</th>
-              <th className="pure-u-4-24">Ack Time</th>
-              <th className="pure-u-4-24">Ended</th>
-              <th className="pure-u-4-24">Started By</th>
-            </tr>
-          </thead>
-        </table>
-        {nodes}
-      </div>
-      );
+      return <Mettle.components.EntityTable
+              className={this.props.className}
+              caption="Pipeline Runs"
+              action={<Link to="NewRun" params={this.getParams()}>New Run</Link>}
+              headers={headers}
+              rows={rows}
+              linkTo="PipelineRun"
+              idKey="runId"
+            />;
     }
   });
 

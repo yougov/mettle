@@ -1,10 +1,14 @@
 import json
+import logging
 
 from spa import JSONResponse
 from spa import exceptions
 
 from mettle.models import Pipeline, Service, PipelineRun
 from mettle.web.framework import ApiView
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def pipeline_summary(pipeline, runs=None, notifications=None):
@@ -94,7 +98,7 @@ class PipelineDetails(ApiView):
             Pipeline.name==pipeline_name,
             Service.id==Pipeline.service_id,
         ).one()
-        return JSONResponse(pipeline.as_dict())
+        return JSONResponse(pipeline_summary(pipeline))
 
     def put(self, service_name, pipeline_name):
         pipeline = self.db.query(Pipeline).join(Service).filter(
@@ -125,3 +129,24 @@ class PipelineDetails(ApiView):
             pipeline.updated_by = self.request.session['username']
         self.db.commit()
         return JSONResponse(pipeline.as_dict())
+
+    def websocket(self, service_name, pipeline_name):
+        pipeline = self.db.query(Pipeline).join(Service).filter(
+            Service.name==service_name,
+            Pipeline.name==pipeline_name,
+            Service.id==Pipeline.service_id,
+        ).one()
+        self.ws.send(json.dumps(pipeline_summary(pipeline)))
+        exchange = self.app.settings['state_exchange']
+        routing_keys = [
+            'services.%s.pipelines.%s' % (service_name, pipeline_name),
+        ]
+        self.bind_queue_to_websocket(exchange, routing_keys)
+
+    def on_rabbit_message(self, ch, method, props, body):
+        # Here we're doing an extra DB query for every change event.  That's a
+        # bit wasteful, but this is a low traffic stream.
+        info = json.loads(body)
+        pipeline = self.db.query(Pipeline).get(info['id'])
+        info.update(pipeline_summary(pipeline))
+        self.ws.send(json.dumps(info))

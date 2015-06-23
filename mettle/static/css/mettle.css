@@ -80,6 +80,10 @@ small {
   font-size: 80%;
 }
 
+a {
+  color: #00C5FF;
+}
+
 /* BUTTON SIZING */
 
 .button-xsmall {
@@ -107,24 +111,31 @@ small {
 
 #content header {
   background-color: #fff;
-  padding: 20px 0;
-  margin-bottom: 40px;
 }
 
-#content .page-header {
+.breadcrumbs {
   font-size: 16px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
   color: #6b6b6b;
-  border-bottom: 1px solid #d7d7d7;
-  margin-bottom: 20px;
-  padding-left: 4px;
-  padding-bottom: 4px;
+  font-size: 16px;
 }
 
-#content .page-header > span:before {
+.breadcrumbs li:before {
   content: ">";
   margin: 0 8px 0 8px;
+}
+
+
+.breadcrumbs li:first-child:before {
+  content: "";
+  margin: 0;
+}
+
+#content .page-header > a,
+.breadcrumbs a {
+  text-decoration: none;
+  color: #333;
+  font-style: italic;
+  /*font-size: 14px;*/
 }
 
 .title {
@@ -139,28 +150,16 @@ small {
   font-weight: lighter;
 }
 
-.mettle-nav {
-  display: inline;
-}
-
-.mettle-nav li {
+.breadcrumbs li {
   display: inline;
   list-style-type: none;
   font-size: 16px;
   font-family: "RobotoThin", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
-.mettle-nav li:before {
+.breadcrumbs li:before {
   content: ">";
   margin: 0 8px 0 8px;
-}
-
-#content .page-header > a,
-.mettle-nav a {
-  text-decoration: none;
-  color: #333;
-  font-style: italic;
-  font-size: 14px;
 }
 
 .user {
@@ -168,8 +167,8 @@ small {
 }
 
 .table {
-  width: 100%;
-  max-width: 100%;
+  /*width: 100%;*/
+  /*max-width: 100%;*/
 }
 .table>tbody>tr>td,
 .table>tbody>tr>th,
@@ -217,7 +216,6 @@ small {
 .service,
 .pipeline,
 .run,
-.log,
 .notification {
   padding: 0;
   color: #292929;
@@ -229,7 +227,6 @@ small {
 .service:hover,
 .pipeline:hover,
 .run:hover,
-.log:hover,
 .notification:hover {
   background-color: #f7f7f7;
 }
@@ -283,24 +280,24 @@ small {
 .run.warning:hover a {
   color: #fff;
 }
-.service .circle,
-.pipeline .circle,
-.run .circle {
+
+.status-light {
   width: 15px;
   height: 15px;
   border-radius: 50%;
   margin: 0 auto;
-  background-color: rgba(128,255,0,1);
 }
-.service.danger .circle,
-.pipeline.danger .circle,
-.run.danger .circle {
-  background-color: #F00;
+
+.status-light.ok {
+  background-color: #0CE80C;
 }
-.service.warning .circle,
-.pipeline.warning .circle,
-.run.warning .circle {
-  background-color: #FF0;
+
+.status-light.error {
+  background-color: #FF0800;
+}
+
+.status-light.warning {
+  background-color: #FFD700;
 }
 
 .service div:last-child,
@@ -357,27 +354,33 @@ small {
 /* LOGS */
 
 .log {
-  margin-top: 5px;
-  /*border: 1px solid #eee;*/
-  /*background-color: rgb(250,250,250);*/
+  font-family: "Lucida Console", Monaco, monospace;
   white-space: pre;
   word-wrap: normal;
-  color: rgb(85,85,85);
+  background-color: black;
+  color: white;
+  font-weight: lighter;
+  font-size: 13px;
+  width: 100%;
 }
 
-.log [class *= "pure-u"] {
-  font-family: monospace;
+.log td {
+  padding: 0.25em 0.25em 0 0.25em;
+}
+
+.log .line-num {
+  padding-left: 1em;
 }
 
 /* PIPELINE RUNS */
-/* For some reason this won't apply itself to my React-driven elements */
+/* For some reason this won't apply itself to my React-driven SVG elements */
 
 .succeeded {
-  fill: #0f0;
+  fill: #0CE80C;
 }
 
 .failed {
-  fill: #f00;
+  fill: #FF0800;
 }
 
 .unstarted {
@@ -442,15 +445,139 @@ keyframes fadesomefails {
   fill: red;
 }
 
-.new-button {
+/* REUSABLE COMPONENTS */
+
+.entity-table .action {
   float: right;
+  text-align: right;
 }
 
-table.summary {
+.gridblock, .gridblock p {
+  font-size: 14px;
+  font-family: 'RobotoLight';
+  font-weight: lighter;
+}
+
+.gridblock table {
+  border: none;
+  margin-bottom: 1em;
+}
+
+.text-block p {
+  margin-top: 1em;
+}
+
+.summary caption, .gridblock caption, .gridblock .gridhead, .gridform legend {
+  font-size: 14px;
+  text-align: left;
+  font-style: normal;
+  background: #00C5FF;
+  color: white;
+  padding: 8px 1em;
+}
+
+.summary caption a, .gridblock caption a {
+  color: white;
+  text-decoration: none;
+  font-style: italic;
+}
+
+.summary td, .entity-table td {
+  border: none;
+  font-weight: lighter;
+  font-family: 'RobotoLight';
+}
+
+.summary th, .entity-table th {
+  text-align: left;
+  font-weight: bold;
+  border: none;
+}
+
+.entity-table td a {
+  text-decoration: none;
+  color: black;
+}
+
+.entity-table tbody tr:hover {
+  background-color: #f7f7f7;
+}
+
+.entity-table thead {
+  background-color: transparent;
+}
+
+.gridform legend {
+  /*display: block;*/
+  /*padding: .3em 0;*/
+  /*margin-bottom: .3em;*/
+  /*color: #333;*/
+  /*border-bottom: none; */
+}
+
+.current-user {
+  float: right;
   font-size: 12px;
-  border: none;
 }
 
-table.summary td {
-  border: none;
+/* for providing gutters between top level grid blocks */
+
+.pure-g > div {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.l-box {
+    padding: 0.5em;
+}
+
+.l-box.first {
+  padding-left
+}
+
+.gutter {
+  padding-right: 1em;
+}
+
+.gutter.last {
+padding-right: 0;
+}
+
+/*
+PALLETE
+light blue: 00C5FF (used in headers)
+darker blue: 6600FF
+red: FF0800
+green: 0CE80C
+yellow: FFD700
+*/
+.button-success,
+.button-error,
+.button-warning,
+.button-secondary,
+.button-primary {
+    color: white;
+    border-radius: 4px;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.button-success {
+    background: #0CE80C;
+}
+
+.button-error {
+    background: #FF0800;
+}
+
+.button-warning {
+    background: #FFD700;
+}
+
+.button-primary {
+  background: #6600FF;
+}
+
+.button-secondary {
+    background: #00C5FF;
 }

@@ -81,48 +81,45 @@
     },
 
     render: function() {
-      var notifications = this.state.notifications;
-      var nodes = _.map(this.state.pipelines, function(data, name) {
-        var run_id, params = {
-          newRunTime: new Date(data.next_run_time).toLocaleString(),
-          lastRunTime: null
-        }
-        if(Object.keys(data['runs']).length > 0) {
-          run_id = Object.keys(data['runs'])[0];
-          params['lastRunTime'] = data['runs'][run_id].end_time ? new Date(data['runs'][run_id].end_time).toLocaleString() : null
-        }
 
-        return (
-          <div className={Object.size(notifications[data.name])==0 ? 'pipeline pure-g' : 'pipeline pure-g warning'} key={"pipeline-link-" + name}>
-            <div className="pure-u-1-24"><Link to="Pipeline" params={{serviceName: this.props.serviceName, pipelineName: data.name}}><div className="circle"></div></Link></div>
-            <div className="pure-u-6-24"><Link to="Pipeline" params={{serviceName: this.props.serviceName, pipelineName: data.name}}>{name}</Link></div>
-            <div className="pure-u-6-24"><Link to="Pipeline" params={{serviceName: this.props.serviceName, pipelineName: data.name}}>{data.updated_by}</Link></div>
-            <div className="pure-u-3-24"><Link to="Pipeline" params={{serviceName: this.props.serviceName, pipelineName: data.name}}>{data.crontab}</Link></div>
-            <div className="pure-u-2-24"><Link to="Pipeline" params={{serviceName: this.props.serviceName, pipelineName: data.name}}>{data.retries}</Link></div>
-            <div className="pure-u-2-24 notifications"><Link to="PipelineNotifications" params={{serviceName: this.props.serviceName, pipelineName: data.name}} className="badge">{Object.size(notifications[data.name])}</Link></div>
-            <div className="pure-u-2-24"><Link to="Pipeline" params={{serviceName: this.props.serviceName, pipelineName: data.name}}>{params.lastRunTime}</Link></div>
-            <div className="pure-u-2-24"><Link to="Pipeline" params={{serviceName: this.props.serviceName, pipelineName: data.name}}>{params.newRunTime}</Link></div>
-          </div>);
+      var headers = {
+        "": "status",
+        "Name": "name",
+        "Updated By": "updated_by",
+        "Retries": "retries",
+        "Schedule": "schedule",
+        "Last Run": "last_run_formatted",
+        "Next Run": "next_run_formatted",
+        "Notifications": "notificationsCount"
+      };
+
+      var rows = _.map(this.state.pipelines, function(data) {
+        var notificationsCount = Object.size(this.state.notifications[data.name]);
+        var status = notificationsCount === 0 ? "ok" : "warning";
+        return _.extend(data, {
+          // format next and last run
+          "next_run_formatted": Mettle.formatDate(data.next_run_time),
+          "last_run_formatted": Mettle.formatDate(data.last_run_time),
+          // set schedule from crontab or chained from ID
+          "schedule": data.crontab || "Chained from " + data.chained_from_id,
+          // a little renaming so the data can be fed to react router.
+          "pipelineName": data.name,
+          "serviceName": this.props.serviceName,
+          "notificationsCount": notificationsCount, 
+          "className": "pipeline " + status,
+          "status": <Mettle.components.StatusLight status={status} />
+        });
       }, this);
+
       return (
-      <div className="pure-u-1">
-        <h1 className="page-header"><Link to="App">Home</Link><Breadcrumbs /><span>Pipelines</span></h1>
-        <table className="table">
-          <thead>
-            <tr className="pure-g">
-              <th className="pure-u-1-24"></th>
-              <th className="pure-u-6-24">Name</th>
-              <th className="pure-u-6-24">Updated By</th>
-              <th className="pure-u-3-24">Crontab</th>
-              <th className="pure-u-2-24">Retries</th>
-              <th className="pure-u-2-24">Notifications</th>
-              <th className="pure-u-2-24">Last Run</th>
-              <th className="pure-u-2-24">Next Run</th>
-            </tr>
-          </thead>
-        </table>
-        {nodes}
-      </div>
+          <Mettle.components.EntityTable
+            className={this.props.className}
+            caption="Pipelines"
+            headers={headers}
+            rows={rows}
+            linkTo="Pipeline"
+            idKey="id"
+          />
       );
     }
   });
@@ -131,18 +128,87 @@
     mixins: [Router.State],
 
     render: function() {
-      var inside;
       var routes = this.getRoutes();
+      var serviceName = this.getParams().serviceName;
+      var pipelineName = this.getParams().pipelineName;
       if (routes[routes.length-1].name === 'Pipeline') {
-        inside = <Mettle.components.RunsList serviceName={this.getParams().serviceName} pipelineName={this.getParams().pipelineName} />;
+        // we're the last thing in the path.  Render!
+        return (<div className="pure-u-1 pure-g l-box">
+          <PipelineSummary className="pure-u-1-4 gutter" serviceName={serviceName} pipelineName={pipelineName} />
+          <Mettle.components.RunsList className="pure-u-3-4" serviceName={serviceName} pipelineName={pipelineName} />
+          </div>);
       } else {
-        inside = <RouteHandler />;
+        // we're not the last thing in the path.  delegate!
+        return <RouteHandler />;
       }
-      return (
-        <div>
-          {inside}
-        </div>
-      );
+    }
+  });
+
+  var PipelineSummary = Mettle.components.PipelineSummary = React.createClass({
+
+    getInitialState: function() {
+      return {};
+    },
+
+    getData: function(nextProps) {
+      this.cleanup();
+
+      this.ws = Mettle.getPipelineStream(this.props.serviceName, this.props.pipelineName);
+      this.ws.onmessage = this.onMessage;
+
+      this.ws_notifications = Mettle.getNotificationStream(false, this.props.serviceName);
+      this.ws_notifications.onmessage = this.onNotificationsStreamData;
+    },
+
+    onMessage: function(ev) {
+      this.setState(JSON.parse(ev.data));
+    },
+
+    cleanup: function() {
+      if (this.ws) {
+        this.ws.close();
+        this.ws = undefined;
+      }
+    },
+
+    componentWillUnmount: function () {
+      this.cleanup();
+    },
+
+    componentDidMount: function() {
+      this.getData();
+    },
+
+    render: function () {
+
+      // We're cobbling together the object this way because we want the
+      // properties to show in a certain order in the table.
+      var summary = {
+        "Name": this.state.name,
+      };
+
+      // show crontab, or chained from, but not both.
+      if (this.state.crontab) {
+        summary['Crontab'] = this.state.crontab;
+      }
+
+      if (this.state.chained_from_id) {
+        summary['Chained From (ID)'] = this.state.chained_from_id;
+      }
+      
+      summary = _.extend(summary, {
+        "Active": this.state.active === undefined ? '' : this.state.active.toString(),
+        "Retries": this.state.retries,
+        "Updated By": this.state.updated_by
+      });
+      return <Mettle.components.SummaryTable caption="Pipeline Info" className={this.props.className} id={this.state.id} data={summary} />;
+    }
+  });
+
+  var EditPipeline = Mettle.components.EditPipeline = React.createClass({
+    mixins: [Router.State],
+    render: function() {
+      return (<div>Edit me!</div>);
     }
   });
 })();

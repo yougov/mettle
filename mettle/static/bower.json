@@ -17,7 +17,8 @@
     "react": "~0.12.2",
     "superagent": "~0.21.0",
     "pure": "~0.6.0",
-    "reconnectingWebsocket": "https://github.com/joewalnes/reconnecting-websocket.git#1.0.0"
+    "reconnectingWebsocket": "https://github.com/joewalnes/reconnecting-websocket.git#1.0.0",
+    "moment": "~2.10.3"
   },
   "resolutions": {
     "lodash": "~3.5.0"

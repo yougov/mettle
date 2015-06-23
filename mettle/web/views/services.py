@@ -1,3 +1,5 @@
+import json
+
 from sqlalchemy.sql.expression import func
 from spa import JSONResponse
 
@@ -5,24 +7,10 @@ from mettle.web.framework import ApiView
 from mettle.models import Service
 
 
-def service_summary(service):
-    # Right now just return a dict of data from the instance, but in the future
-    # we'll also send some summary of whether the most recent run in each
-    # pipeline was successful.
-    data = dict(
-        id=service.id,
-        name=service.name,
-        description=service.description,
-        updated_by=service.updated_by,
-        pipeline_names=service.pipeline_names,
-    )
-    return data
-
-
 class ServiceList(ApiView):
     def get_services(self):
         services = self.db.query(Service).order_by(func.lower(Service.name)).all()
-        return [service_summary(s) for s in services]
+        return [s.as_dict() for s in services]
 
     def get(self):
         return JSONResponse(dict( objects=self.get_services()))
@@ -46,10 +34,11 @@ class ServiceList(ApiView):
 class ServiceDetail(ApiView):
     def get(self, service_name):
         service = self.db.query(Service).filter_by(name=service_name).one()
-        summary = service_summary(service)
-        return JSONResponse(summary)
+        return JSONResponse(service.as_dict())
 
     def websocket(self, service_name):
+        service = self.db.query(Service).filter_by(name=service_name).one()
+        self.ws.send(json.dumps(service.as_dict()))
         settings = self.app.settings
         exchange = settings['state_exchange']
         routing_keys = ['services.' + service_name]

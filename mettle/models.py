@@ -51,6 +51,13 @@ class Service(Base):
         UniqueConstraint('name'),
     )
 
+    def as_dict(self):
+        return dict(id=self.id,
+                    name=self.name,
+                    description=self.description,
+                    updated_by=self.updated_by,
+                    pipeline_names=self.pipeline_names)
+
     def __repr__(self):
         return 'Service <%s>' % self.name
 
@@ -355,6 +362,14 @@ class Job(Base):
         stime = self.start_time.isoformat() if self.start_time else None
         etime = self.end_time.isoformat() if self.end_time else None
         expires = self.expires.isoformat() if self.expires else None
+
+        # A bit ugly.  split these into separate DB columns?
+        host = None
+        pid = None
+        if self.assigned_worker:
+            host, pid = self.assigned_worker.split('_')[:2]
+            pid = int(pid)
+
         return dict(
             id=self.id,
             pipeline_run_id=self.pipeline_run_id,
@@ -365,6 +380,8 @@ class Job(Base):
             end_time=etime,
             assigned_worker=self.assigned_worker,
             expires=expires,
+            host=host,
+            pid=pid,
         )
 
     def get_queue(self, service_name):

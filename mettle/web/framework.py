@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+import sys
 
 import spa
 import pika
@@ -28,7 +29,7 @@ class ApiView(spa.Handler):
         queue = channel.queue_declare(exclusive=True)
         queue_name = queue.method.queue
 
-        logger.info('Rabbit socket on %s/%s' % (exchange, routing_keys))
+        logger.debug('Rabbit socket on %s/%s' % (exchange, routing_keys))
         channel.exchange_declare(exchange=exchange, type='topic', durable=True)
 
         for rk in routing_keys:
@@ -64,4 +65,9 @@ class ApiView(spa.Handler):
             # For other kinds of exceptions, fall back to our mapping.
             cls_path = classpath(e)
             resp_cls = EXCEPTION_JSON_RESPONSES[cls_path]
-            return resp_cls(str(e))(environ, start_response)
+            if self.app.settings.show_tracebacks:
+                _, _, traceback = sys.exc_info()
+            else:
+                traceback = None
+
+            return resp_cls(str(e), traceback=traceback)(environ, start_response)
