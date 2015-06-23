@@ -87,6 +87,16 @@
     return new ReconnectingWebSocket(WSPREFIX + getServiceURL(serviceName));
   };
 
+  Mettle.getPipeline = function(serviceName, pipelineName, cb) {
+    var url = getPipelineURL(serviceName, pipelineName);
+    return request.get(url, cb);
+  }
+
+  Mettle.updatePipeline = function(serviceName, pipelineName, payload, cb) {
+    var url = getPipelineURL(serviceName, pipelineName);
+    return request.put(url).send(payload).end(cb);
+  };
+  
   Mettle.getPipelineStream = function(serviceName, pipelineName) {
     return new ReconnectingWebSocket(WSPREFIX + getPipelineURL(serviceName, pipelineName));
   };

@@ -153,6 +153,7 @@
   });
 
   var PipelineSummary = Mettle.components.PipelineSummary = React.createClass({
+    mixins: [Router.State],
 
     getInitialState: function() {
       return {};
@@ -213,14 +214,80 @@
           caption="Pipeline Info"
           className={this.props.className}
           id={this.state.id} data={summary}
+          action={<Link to="EditPipeline" params={this.getParams()}>Edit</Link>}
         />;
     }
   });
 
   var EditPipeline = Mettle.components.EditPipeline = React.createClass({
-    mixins: [Router.State],
+    mixins: [Router.State, Router.Navigation],
+
+    getInitialState: function() {
+      return {};
+    },
+
+    getData: function(nextProps) {
+      var params = this.getParams();
+      Mettle.getPipeline(params.serviceName, params.pipelineName, this.onData);
+    },
+
+    onData: function(response) {
+      if(response.status == 200) {
+        console.log(response.body)
+        this.setState(response.body);
+      }
+    },
+
+    handleChange: function(event) {
+      var state = this.state;
+      if(event.target.type == 'checkbox') {
+        state[event.target.name] = event.target.checked;
+      }
+      else if (event.target.type == 'number') {
+        state[event.target.name] = parseFloat(event.target.value);
+      }
+      else {
+        state[event.target.name] = event.target.value;
+      }
+      this.setState(state);
+    },
+
+    handleSubmit: function(event) {
+      event.preventDefault();
+      var params = this.getParams();
+      Mettle.updatePipeline(params.serviceName, params.pipelineName, this.state, this.onSuccess);
+    },
+
+    onSuccess: function(response) {
+      this.transitionTo('Pipeline', this.getParams());
+    },
+
+    componentDidMount: function() {
+      this.getData();
+    },
+
     render: function() {
-      return (<div>Edit me!</div>);
+      return (
+        <form onSubmit={this.handleSubmit} className={"pure-form pure-form-stacked gridform pure-u-1 " + this.props.className}>
+          <fieldset>
+            <legend>{this.props.caption}</legend>
+            <Mettle.components.FormInput name="active" type="checkbox" value={this.state.active} onChange={this.handleChange} />
+            <div className="pure-control-group">
+              <label htmlFor="chained_from">Chained from ID</label>
+              <select id="chained_from_id" name="chained_from_id" ref="chained_from_id">
+                <option>-- default --</option>
+                <option value="1">value</option>
+              </select>
+            </div>
+            <Mettle.components.FormInput name="crontab" type="text" value={this.state.crontab} onChange={this.handleChange} />
+            <Mettle.components.FormInput name="retries" type="number" value={this.state.retries} onChange={this.handleChange} />
+            
+            <div className="pure-controls">
+              <button type="submit" className="pure-button button-secondary">Submit</button>
+            </div>
+          </fieldset>
+        </form>
+      );
     }
   });
 })();

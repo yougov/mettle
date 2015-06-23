@@ -59,6 +59,15 @@
     }
   });
 
+  Mettle.components.FormInput = React.createClass({
+    render: function() {
+      return <div className="pure-control-group">
+        <label htmlFor={this.props.name}>{this.props.name}
+        <input name={this.props.name} id={this.props.name} type={this.props.type} ref={this.props.name} value={this.props.value} onChange={this.props.onChange} checked={this.props.value} /></label>
+      </div>;
+    }
+  })
+
   Mettle.components.TextBlock = React.createClass({
     render: function() {
       return <div className={"gridblock text-block " + this.props.className}>
