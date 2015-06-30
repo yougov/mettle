@@ -8,7 +8,7 @@ from croniter import croniter
 import pika
 from mettle_protocol import declare_exchanges
 
-from mettle.models import Pipeline, PipelineRun, Job, JobLogLine
+from mettle.models import Pipeline, PipelineRun, Job, JobLogLine, Checkin
 from mettle.settings import get_settings
 from mettle.db import make_session_cls
 from mettle.lock import lock_and_announce_run, lock_and_announce_job
@@ -222,8 +222,20 @@ def cleanup_logs(settings, db):
 def do_scheduled_tasks(settings):
     start_time = utc.now()
     db = make_session_cls(settings.db_url)()
+    # write to checkins
+    db.merge(Checkin(proc_name='timer', time=start_time))
+    db.commit()
+    # connect to RabbitMQ
     rabbit_conn = pika.BlockingConnection(pika.URLParameters(settings.rabbit_url))
     rabbit = rabbit_conn.channel()
+    # write message for dispatcher to be consumed
+    rabbit.exchange_declare(exchange=settings.dispatcher_ping_exchange, type='topic', durable=True)
+    rabbit.basic_publish(
+        exchange=settings.dispatcher_ping_exchange,
+        routing_key='timer',
+        body='timer'
+    )
+
     declare_exchanges(rabbit)
     check_pipelines(settings, db, rabbit)
     db.commit()

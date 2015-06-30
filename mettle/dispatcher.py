@@ -8,7 +8,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from mettle.settings import get_settings
-from mettle.models import Service, Pipeline, PipelineRun, PipelineRunNack, Job
+from mettle.models import Service, Pipeline, PipelineRun, PipelineRunNack, Job, Checkin
 from mettle.lock import lock_and_announce_job
 from mettle.db import make_session_cls
 from mettle.notify import notify_failed_run
@@ -142,8 +142,6 @@ def on_job_end(settings, rabbit, db, data):
             run.end_time = end_time
 
 
-
-
 def main():
     settings = get_settings()
 
@@ -165,8 +163,12 @@ def main():
                       queue=queue_name, routing_key='#')
     rabbit.queue_bind(exchange=mp.END_JOB_EXCHANGE,
                       queue=queue_name, routing_key='#')
+    rabbit.queue_bind(exchange=settings.dispatcher_ping_exchange,
+                      queue=queue_name,
+                      routing_key='timer')
 
     Session = make_session_cls(settings.db_url)
+
     for method, properties, body in rabbit.consume(queue=queue_name):
         db = Session()
         if method.exchange == mp.ANNOUNCE_SERVICE_EXCHANGE:
@@ -180,6 +182,9 @@ def main():
                          properties.correlation_id)
         elif method.exchange == mp.END_JOB_EXCHANGE:
             on_job_end(settings, rabbit, db, json.loads(body))
+        # get messages from process timer restart queue
+        elif method.exchange == settings.dispatcher_ping_exchange:
+            db.merge(Checkin(proc_name='dispatcher', time=utc.now()))
         db.commit()
         rabbit.basic_ack(method.delivery_tag)
 

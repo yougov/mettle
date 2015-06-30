@@ -10,7 +10,7 @@ from spa.static import CacheBuster, StaticHandler
 from mettle.settings import get_settings
 from mettle.db import make_session_cls
 from mettle.web.views import (logs, services, pipelines, runs, targets, index,
-                              notifications)
+                              notifications, checkins)
 from mettle.web.wrappers import MettleRequest
 
 
@@ -28,7 +28,6 @@ def build_routes(settings):
         ('/api/services/<service_name>/', 'service_detail', services.ServiceDetail),
         ('/api/services/<service_name>/notifications/', 'service_notifications',
          notifications.ByService),
-
 
         # Pipelines
         ('/api/services/<service_name>/pipelines/', 'pipeline_list',
@@ -57,6 +56,10 @@ def build_routes(settings):
          'run_job_logs', logs.Log),
         ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/<int:run_id>/targets/<target>/jobs/',
          'target_job_list', targets.TargetJobs),
+
+        # Checkins
+        ('/api/checkins/', 'checkins_list', checkins.CheckinList),
+
     ]
 
     if settings.enable_static_hashing:

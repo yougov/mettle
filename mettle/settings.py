@@ -48,6 +48,8 @@ DEFAULTS = {
 
     # The RabbitMQ exchange where updates to Postgres tables are published.
     'state_exchange': 'mettle_state',
+    # exchange that pings the dispatcher proc everytime the timer proc completes a run
+    'dispatcher_ping_exchange': 'dispatcher_ping',
 
     'static_dir': pkg_resources.resource_filename('mettle', 'static'),
 

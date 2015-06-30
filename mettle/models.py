@@ -530,3 +530,18 @@ class Notification(Base):
         ForeignKeyConstraint(['pipeline_run_id', 'job_id'],
                              ['jobs.pipeline_run_id', 'jobs.id']),
     )
+
+
+class Checkin(Base):
+
+    __tablename__ = 'checkins'
+
+    proc_name = Column(Text, primary_key=True)
+    time = Column(DateTime(timezone=True), nullable=False)
+
+    def as_dict(self):
+        return {
+            'proc_name': self.proc_name,
+            'time': self.time.isoformat(),
+        }
+
