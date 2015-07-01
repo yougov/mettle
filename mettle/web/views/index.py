@@ -22,27 +22,27 @@ TMPL = """
 """
 
 CSS_FILES = [
-  'static/bower/pure/pure-min.css',
+  'static/bower_components/pure/pure-min.css',
   'static/font/roboto/stylesheet.css',
   'static/css/mettle.css'
 ]
 
 JS_FILES = [
-  'static/bower/lodash/lodash.min.js',
-  'static/bower/react/react.js',
-  'static/bower/react-router/build/global/ReactRouter.min.js',
-  'static/bower/graphlib/dist/graphlib.core.js',
-  'static/bower/dagre/dist/dagre.core.min.js',
-  'static/bower/reconnectingWebsocket/reconnecting-websocket.min.js',
-  'static/bower/superagent/superagent.js',
-  'static/bower/moment/moment.js',
+  'static/bower_components/lodash/lodash.min.js',
+  'static/bower_components/react/react.js',
+  'static/bower_components/react-router/build/global/ReactRouter.min.js',
+  'static/bower_components/graphlib/dist/graphlib.core.js',
+  'static/bower_components/dagre/dist/dagre.core.min.js',
+  'static/bower_components/reconnectingWebsocket/reconnecting-websocket.min.js',
+  'static/bower_components/superagent/superagent.js',
+  'static/bower_components/moment/moment.js',
 ]
 
 COMPILED_JS = 'static/js/compiled.js'
 
 JS_DEV = [
     'static/js/mettle.js',
-    'static/bower/react/JSXTransformer.js',
+    'static/bower_components/react/JSXTransformer.js',
     'static/jsx/common.jsx',
     'static/jsx/jobs.jsx',
     'static/jsx/targets.jsx',
