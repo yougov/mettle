@@ -12,14 +12,3 @@ class CheckinList(ApiView):
     def get(self):
         return JSONResponse(dict( objects=self.get_checkins()))
 
-    # PIZZA: I don't know what this method is for
-    def websocket(self):
-        # keyed by proc_name name
-        self.checkins = {s['proc_name']: s for s in self.get_checkins()}
-
-        exchange = self.app.settings['state_exchange']
-
-        routing_keys = [
-            'checkins.*',
-        ]
-        self.bind_queue_to_websocket(exchange, routing_keys)
