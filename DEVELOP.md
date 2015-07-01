@@ -13,5 +13,5 @@ provisioning script to finish.
 You should now see a bunch of output in your terminal.  The Mettle UI should be
 running on port 8000, and some dummy jobs will be running (creating some tiny
 text files in a temp folder).  You can click around the Mettle UI to watch those
-jobs complete, or fail (they're coded to randomly fail some percent of the time,
+jobs complete, or fail (they are coded to randomly fail some percent of the time,
 so we can test retries and error reporting).
