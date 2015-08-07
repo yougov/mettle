@@ -4,62 +4,25 @@ import logging
 from spa import JSONResponse
 from spa import exceptions
 
-from mettle.models import Pipeline, Service, PipelineRun, NotificationList
+from mettle.models import Pipeline, Service
 from mettle.web.framework import ApiView
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def pipeline_summary(pipeline, runs=None, notifications=None):
-
-    last_run = pipeline.last_run_time()
-    next_run = pipeline.next_run_time()
-
-    data = dict(
-        id=pipeline.id,
-        name=pipeline.name,
-        service_id=pipeline.service_id,
-        updated_by=pipeline.updated_by,
-        active=pipeline.active,
-        retries=pipeline.retries,
-        crontab=pipeline.crontab,
-        chained_from_id=pipeline.chained_from_id,
-        next_run_time=(next_run.isoformat() if next_run else None),
-        last_run_time=(last_run.isoformat() if last_run else None),
-    )
-
-    if runs is not None:
-        data['runs'] = {r.id:
-            dict(
-                id=r.id,
-                succeeded=r.succeeded,
-                created_time=r.created_time.isoformat(),
-                ack_time=r.ack_time.isoformat() if r.ack_time else None,
-                end_time=r.end_time.isoformat() if r.end_time else None
-            )
-            for r in runs
-        }
-    if notifications is not None:
-        data['notifications'] = {n.id: n.as_dict() for n in notifications}
-    return data
-
-
 class PipelineList(ApiView):
-    def get_pipelines(self, service_name):
-        service = self.db.query(Service).filter_by(name=service_name).one()
-        pipelines = self.db.query(Pipeline).filter_by(
-            service=service
-        )
-        return [
-            pipeline_summary(p, p.runs.filter(PipelineRun.pipeline_id==p.id,
-                                              PipelineRun.end_time!=None)
-                                      .order_by('-pipeline_runs.id'),
-                             p.notifications.filter_by(acknowledged_by=None))
-            for p in pipelines
-        ]
+    def get_pipelines(self, service_name=None):
+        pipelines = self.db.query(Pipeline)
+        if service_name:
+            service = self.db.query(Service).filter_by(name=service_name).one()
+            pipelines = pipelines.filter_by(service=service)
 
-    def get(self, service_name):
+        pipelines = pipelines.order_by(Pipeline.service_id,
+                                       Pipeline.name.asc())
+        return [p.as_dict() for p in pipelines]
+
+    def get(self, service_name=None):
         return JSONResponse(dict(objects=self.get_pipelines(service_name)))
 
     def websocket(self, service_name):
@@ -123,6 +86,7 @@ class PipelineList(ApiView):
         return JSONResponse(pipeline.as_dict(), headers={'Location': url},
                             status=302)
 
+
 class PipelineDetails(ApiView):
     def get(self, service_name, pipeline_name):
         pipeline = self.db.query(Pipeline).join(Service).filter(
@@ -130,7 +94,7 @@ class PipelineDetails(ApiView):
             Pipeline.name==pipeline_name,
             Service.id==Pipeline.service_id,
         ).one()
-        return JSONResponse(pipeline_summary(pipeline))
+        return JSONResponse(pipeline.as_dict())
 
     def put(self, service_name, pipeline_name):
         pipeline = self.db.query(Pipeline).join(Service).filter(
@@ -168,7 +132,7 @@ class PipelineDetails(ApiView):
             Pipeline.name==pipeline_name,
             Service.id==Pipeline.service_id,
         ).one()
-        self.ws.send(json.dumps(pipeline_summary(pipeline)))
+        self.ws.send(json.dumps(pipeline.as_dict()))
         exchange = self.app.settings['state_exchange']
         routing_keys = [
             'services.%s.pipelines.%s' % (service_name, pipeline_name),
@@ -180,5 +144,5 @@ class PipelineDetails(ApiView):
         # bit wasteful, but this is a low traffic stream.
         info = json.loads(body)
         pipeline = self.db.query(Pipeline).get(info['id'])
-        info.update(pipeline_summary(pipeline))
+        info.update(pipeline.as_dict())
         self.ws.send(json.dumps(info))

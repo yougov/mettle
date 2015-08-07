@@ -146,6 +146,7 @@ class Pipeline(Base):
             id=self.id,
             name=self.name,
             service_id=self.service_id,
+            service_name=self.service.name, # can cause extra query!
             notification_list_id=self.notification_list_id,
             updated_by=self.updated_by,
             active=self.active,

@@ -221,11 +221,7 @@
 
   var EditPipeline = Mettle.components.EditPipeline = React.createClass({
     mixins: [Router.State, Router.Navigation],
-
-    getInitialState: function() {
-      return {};
-    },
-
+    
     getData: function(nextProps) {
       var params = this.getParams();
       Mettle.getPipeline(params.serviceName, params.pipelineName, this.onData);
@@ -233,23 +229,8 @@
 
     onData: function(response) {
       if(response.status == 200) {
-        console.log(response.body)
         this.setState(response.body);
       }
-    },
-
-    handleChange: function(event) {
-      var state = this.state;
-      if(event.target.type == 'checkbox') {
-        state[event.target.name] = event.target.checked;
-      }
-      else if (event.target.type == 'number') {
-        state[event.target.name] = parseFloat(event.target.value);
-      }
-      else {
-        state[event.target.name] = event.target.value;
-      }
-      this.setState(state);
     },
 
     handleSubmit: function(event) {
@@ -267,25 +248,117 @@
     },
 
     render: function() {
-      return (
-        <form onSubmit={this.handleSubmit} className={"pure-form pure-form-stacked gridform pure-u-1 " + this.props.className}>
-          <fieldset>
-            <legend>{this.props.caption}</legend>
-            <Mettle.components.FormInput name="active" type="checkbox" value={this.state.active} onChange={this.handleChange} />
+      if (this.state === null) {
+        return <div />;
+      }
+      return <PipelineForm 
+        className={this.props.className}
+        handleSubmit={this.handleSubmit}
+        caption={this.props.caption}
+        pipelineData={this.state}
+      />
+    }
+  });
+
+  var PipelineForm = Mettle.components.PipelineForm = React.createClass({
+
+    getInitialState: function() {
+      var data = this.props.pipelineData || {};
+
+      if (data.crontab) {
+        data.scheduleType = 'crontab';
+      } else {
+        data.scheduleType = 'chained';
+      }
+      return data;
+    },
+
+    handleChange: function(event) {
+      var state = this.state;
+      if(event.target.type == 'checkbox') {
+        state[event.target.name] = event.target.checked;
+      }
+      else if (event.target.type == 'number') {
+        state[event.target.name] = parseFloat(event.target.value);
+      }
+      else {
+        state[event.target.name] = event.target.value;
+      }
+      this.setState(state);
+    },
+    
+    getScheduleComponent: function() {
+      if (this.state.scheduleType === 'crontab') {
+        return <Mettle.components.FormInput
+            label="Crontab"
+            name="crontab"
+            type="text"
+            value={this.state.crontab}
+            onChange={this.handleChange}
+          />;
+      } else if (this.state.scheduleType === 'chained' ) {
+        return ( 
+          <div>
             <div className="pure-control-group">
-              <label htmlFor="chained_from">Chained from ID</label>
-              <select id="chained_from_id" name="chained_from_id" ref="chained_from_id">
-                <option>-- default --</option>
+              <label htmlFor="service">Service</label>
+              <select id="service_id" name="service_id" ref="service_id">
+                <option>---------</option>
                 <option value="1">value</option>
               </select>
             </div>
-            <Mettle.components.FormInput name="crontab" type="text" value={this.state.crontab} onChange={this.handleChange} />
-            <Mettle.components.FormInput name="retries" type="number" value={this.state.retries} onChange={this.handleChange} />
-            
-            <div className="pure-controls">
-              <button type="submit" className="pure-button button-secondary">Submit</button>
+            <div className="pure-control-group">
+              <label htmlFor="chained_from">Pipeline</label>
+              <select id="chained_from_id" name="chained_from_id" ref="chained_from_id">
+                <option>---------</option>
+                <option value="1">value</option>
+              </select>
             </div>
-          </fieldset>
+          </div>
+        );
+      }
+    },
+
+    render: function() {
+      return (
+        <form onSubmit={this.props.handleSubmit}
+          className={"pure-form pure-form-stacked gridform pure-u-1 " + this.props.className}>
+          <fieldset>
+            <legend>{this.props.caption}</legend>
+            
+            <div className="pure-control-group">
+              <label htmlFor="scheduleType">Schedule Type</label>
+              <select id="scheduleType"
+                name="scheduleType"
+                ref="scheduleType"
+                value={this.state.scheduleType} 
+                onChange={this.handleChange}>
+                <option value="crontab">Crontab</option>
+                <option value="chained">Chained</option>
+              </select>
+            </div>
+            
+            {this.getScheduleComponent()}
+            
+            <Mettle.components.FormInput
+              label="Retries"
+              name="retries"
+              type="number"
+              value={this.state.retries}
+              onChange={this.handleChange}
+            />
+            
+            <Mettle.components.FormInput
+              label="Active"
+              name="active"
+              type="checkbox"
+              value={this.state.active}
+              onChange={this.handleChange}
+            />
+
+          <div className="pure-controls">
+            <button type="submit" className="pure-button button-secondary">Submit</button>
+          </div>
+        </fieldset>
         </form>
       );
     }

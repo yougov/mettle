@@ -37,6 +37,9 @@ def build_routes(settings):
         ('/api/services/<service_name>/pipelines/<pipeline_name>/notifications/',
          'pipeline_notifications', notifications.ByPipeline),
 
+        # An unfiltered pipeline listing, to help out some UI components.
+        ('/api/pipelines/', 'pipeline_all', pipelines.PipelineList),
+
         # Runs
         ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/',
          'run_list', runs.RunList),
