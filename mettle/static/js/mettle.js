@@ -39,6 +39,10 @@
     return API_ROOT + '/services/';
   };
 
+  var getPipelinesListURL = function() {
+    return API_ROOT + '/pipelines/';
+  };
+
   var getServiceURL = function(serviceName) {
     return getServicesURL() + serviceName + '/';
   };
@@ -90,6 +94,14 @@
   Mettle.getPipeline = function(serviceName, pipelineName, cb) {
     var url = getPipelineURL(serviceName, pipelineName);
     return request.get(url, cb);
+  }
+
+  Mettle.getPipelinesList = function(cb) {
+    return request.get(getPipelinesListURL(), cb)
+  }
+
+  Mettle.getPipelineById = function(pipelineId, cb) {
+    return request.get(getPipelinesListURL() + pipelineId + '/', cb)
   }
 
   Mettle.updatePipeline = function(serviceName, pipelineName, payload, cb) {

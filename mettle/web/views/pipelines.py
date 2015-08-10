@@ -146,3 +146,11 @@ class PipelineDetails(ApiView):
         pipeline = self.db.query(Pipeline).get(info['id'])
         info.update(pipeline.as_dict())
         self.ws.send(json.dumps(info))
+
+
+class PipelineDetailsById(ApiView):
+    def get(self, pipeline_id):
+        pipeline = self.db.query(Pipeline).filter(
+            Pipeline.id==pipeline_id,
+        ).one()
+        return JSONResponse(pipeline.as_dict())

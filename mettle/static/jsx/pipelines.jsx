@@ -236,7 +236,12 @@
     handleSubmit: function(event) {
       event.preventDefault();
       var params = this.getParams();
-      Mettle.updatePipeline(params.serviceName, params.pipelineName, this.state, this.onSuccess);
+      if(this.state.scheduleType === 'chained' && this._renderedComponent.state) {
+        payload = this._renderedComponent.state; // this may be a hack, not sure, but it works
+      } else {
+        payload = this.state;
+      }
+      Mettle.updatePipeline(params.serviceName, params.pipelineName, payload, this.onSuccess);
     },
 
     onSuccess: function(response) {
@@ -281,10 +286,49 @@
       else if (event.target.type == 'number') {
         state[event.target.name] = parseFloat(event.target.value);
       }
+      else if (event.target.name == 'chained_from_id') {
+        state['crontab'] = null;
+        state[event.target.name] = parseFloat(event.target.value);
+      }
+      else if (event.target.name == 'crontab') {
+        state['chained_from_id'] = null;
+        state[event.target.name] = event.target.value;
+      }
       else {
         state[event.target.name] = event.target.value;
       }
       this.setState(state);
+    },
+
+    onPipelinesListData: function(response) {
+      if(response.status == 200) {
+        if(!this.state.services) {
+          var services = {};
+
+          if(response.body.objects) {
+            _.map(response.body.objects, function(pipeline) {
+              if(!services[pipeline.service_name]) {
+                services[pipeline.service_name] = []
+                services[pipeline.service_name].push(pipeline)
+              } else {
+                services[pipeline.service_name].push(pipeline)
+              }
+            })
+
+            this.setState({'services': services})
+          }
+        } else {
+          if(response.body.service_name && !this.state.pipelines) {
+            this.state.chained_service_name = response.body.service_name
+            this.setState({'pipelines': this.state.services[response.body.service_name]})
+          }
+        }
+      }
+    },
+
+    handleSelectService: function(event) {
+      this.state.chained_service_name = event.target.value
+      this.setState({'pipelines': this.state.services[event.target.value]})
     },
     
     getScheduleComponent: function() {
@@ -296,21 +340,41 @@
             value={this.state.crontab}
             onChange={this.handleChange}
           />;
-      } else if (this.state.scheduleType === 'chained' ) {
+      } else if (this.state.scheduleType === 'chained') {
+        // build our service and pipeline dropdowns
+        Mettle.getPipelinesList(this.onPipelinesListData);
+
+        if(this.state.chained_from_id && !this.state.pipelines) {
+          // pre-select our populated dropdowns with predefined data
+          Mettle.getPipelineById(this.state.chained_from_id, this.onPipelinesListData);
+        }
+
+        var services_ddl = _.map(this.state.services, function(service, key) {
+          return (
+            <option key={'service-ddl-id-'+key} value={key}>{key}</option>
+          );
+        }.bind(this));
+
+        var pipelines_ddl = _.map(this.state.pipelines, function(pipeline) {
+          return (
+            <option key={'pipeline-ddl-id-'+pipeline.id} value={pipeline.id}>{pipeline.name}</option>
+          );
+        }.bind(this));
+
         return ( 
           <div>
             <div className="pure-control-group">
               <label htmlFor="service">Service</label>
-              <select id="service_id" name="service_id" ref="service_id">
+              <select id="chained_service_name" name="chained_service_name" ref="chained_service_name" onChange={this.handleSelectService} value={this.state.chained_service_name}>
                 <option>---------</option>
-                <option value="1">value</option>
+                {services_ddl}
               </select>
             </div>
             <div className="pure-control-group">
               <label htmlFor="chained_from">Pipeline</label>
-              <select id="chained_from_id" name="chained_from_id" ref="chained_from_id">
+              <select id="chained_from_id" name="chained_from_id" ref="chained_from_id" onChange={this.handleChange} value={this.state.chained_from_id}>
                 <option>---------</option>
-                <option value="1">value</option>
+                {pipelines_ddl}
               </select>
             </div>
           </div>
@@ -355,10 +419,10 @@
               onChange={this.handleChange}
             />
 
-          <div className="pure-controls">
-            <button type="submit" className="pure-button button-secondary">Submit</button>
-          </div>
-        </fieldset>
+            <div className="pure-controls">
+              <button type="submit" className="pure-button button-secondary">Submit</button>
+            </div>
+          </fieldset>
         </form>
       );
     }

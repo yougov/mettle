@@ -18,7 +18,7 @@ clean_files:
 	-rm mettle/static/jsx/*js
 	-rm -rf mettle/static/bower
 	-rm -rf tmp/*Pipeline/*
-	-rm -rf mettle/static/bower
+	-rm -rf mettle/static/bower_components
 	-rm -rf $(STATIC_DIR)/js/compiled.js
 	-rm -rf $(JSX_TARGETS)
 

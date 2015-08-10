@@ -39,6 +39,7 @@ def build_routes(settings):
 
         # An unfiltered pipeline listing, to help out some UI components.
         ('/api/pipelines/', 'pipeline_all', pipelines.PipelineList),
+        ('/api/pipelines/<pipeline_id>/', 'pipeline_by_id', pipelines.PipelineDetailsById),
 
         # Runs
         ('/api/services/<service_name>/pipelines/<pipeline_name>/runs/',
