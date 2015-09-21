@@ -79,7 +79,7 @@ def publish_event(chan, exchange, data):
 def data_to_routing_key(data):
     data = dict(data)
     table = data['tablename']
-    if 'target' in data:
+    if 'target' in data and not data['target'] is None:
         data['target'] = mq_escape(data['target'])
 
     if table == 'services':
