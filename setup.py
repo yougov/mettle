@@ -13,6 +13,7 @@ setup_params = dict(
     ]),
     packages=setuptools.find_packages(),
     include_package_data=True,
+    url='https://github.com/yougov/mettle',
 
     # Dependency versions are intentionally pinned to prevent surprises at
     # deploy time.  The world is not yet safely semver.
