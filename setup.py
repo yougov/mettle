@@ -34,7 +34,7 @@ setup_params = dict(
 
         # leave mettle-protocol and its dependencies loosely versioned.
         'mettle-protocol>=1.0.1',
-        'pika',
+        'pika>=0.9.14,<=0.10.0',
         'utc',
     ],
     entry_points={
