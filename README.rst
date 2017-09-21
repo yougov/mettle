@@ -1,12 +1,12 @@
 .. image:: https://img.shields.io/pypi/v/mettle.svg
-:target: https://pypi.org/project/mettle
+   :target: https://pypi.org/project/mettle
 
 .. image:: https://img.shields.io/pypi/pyversions/mettle.svg
 
 .. image:: https://img.shields.io/pypi/dm/mettle.svg
 
 .. image:: https://img.shields.io/travis/yougov/mettle/master.svg
-:target: http://travis-ci.org/yougov/mettle
+   :target: http://travis-ci.org/yougov/mettle
 
 Mettle is a framework for managing extract/transform/load (ETL) jobs.  ETL
 processes present a number of problems that Mettle is designed to solve:
