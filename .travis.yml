@@ -22,7 +22,8 @@ jobs:
         tags: true
         all_branches: true
       user: jaraco
-      # supply password with `travis encrypt --add deploy.password`
+      password:
+        secure: gaT76hgcAX0NmGS3LschXcie9tIvZmZ0xCXRbLvonN9iIb89EAL7H0P8tHChFhNU821EbniGNhCn1fXGncIPOki+G5h+W3Ek/6ziQik02NnqdyrAoWcIiJgoseYGxEylFbRNE266ZICXCH/tIbddJOS6tqlqwRsc6CtFlMI8srG64E+/hcugKSA6HEbPC/VG1sW3WCPqPigUXcVgs49wKv4PoNEsSdklvUxJSXHC8fh4XUOMfpgL6gkeA+ZP9PQ+eM58XRVt7IgiQlFgJ4WKgkbTsKKfT9FF/jMvinCWco8kklNHs6yjRbiyaV3XwJo1l5ctVb6c1CyOiHj8HhBEGvJvHO+dKDtZm8kLFxWOXs+SPZJnxHwDLVtRLxIPPuDUWM4oUAokupA8Poa03+/1n6UEfw8Y5aCM/fT0C0Lm5tjgaspXrJk6WQGIUoRRItvkixXMtarnKtyZy2i4RtjIkuu9esDXjA774FksZI8UCGdWZZFMJXvh3WTvirQdv+FtteMUOCdOanFjZ7FIjsQe4fej/N4EGBhuO8ekQEHDNYRdj72mK+/OcMIb/l6ouz7WwDyV7Gckxx40ms1WCrqENdwfq0xcrUanIXejMA3RbCRU+ZZXW4KJr66IH4qRVFg/k39q+acvgyqbzca1HzyaGGhltfBIoqzM+x8UiGyxiTo=
       distributions: dists
       skip_cleanup: true
       skip_upload_docs: true
