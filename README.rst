@@ -1,5 +1,3 @@
-# Mettle
-
 Mettle is a framework for managing extract/transform/load (ETL) jobs.  ETL
 processes present a number of problems that Mettle is designed to solve:
 
