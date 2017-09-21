@@ -5,6 +5,7 @@ from mettle.settings import get_settings
 from mettle.publisher import publish_event
 
 
+@pytest.mark.xfail(reason="Need RabbitMQ fixture")
 def test_long_routing_key():
     settings = get_settings()
     conn = pika.BlockingConnection(pika.URLParameters(settings.rabbit_url))
