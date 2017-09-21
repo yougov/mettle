@@ -1,10 +1,10 @@
 Follow these steps to get a local copy of Mettle running.
 
 1. Install [Vagrant](https://www.vagrantup.com/downloads.html).
-2. Clone the repository at https://bitbucket.org/yougov/mettle.
-3. From the root of the repository, type `vagrant up`.  Wait for the
+2. Clone the repository.
+3. From the root of the checkout, `vagrant up` and wait for the
 provisioning script to finish.
-4. Type `vagrant ssh` to get a shell into the Vagrant environment.
+4. Use `vagrant ssh` to get a shell into the Vagrant environment.
 5. `cd /vagrant`
 6. `mkvirtualenv mettle`
 7. `make dev`
