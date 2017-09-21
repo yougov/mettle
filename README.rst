@@ -1,5 +1,25 @@
+.. image:: https://img.shields.io/pypi/v/mettle.svg
+:target: https://pypi.org/project/mettle
+
+.. image:: https://img.shields.io/pypi/pyversions/mettle.svg
+
+.. image:: https://img.shields.io/pypi/dm/mettle.svg
+
+.. image:: https://img.shields.io/travis/yougov/mettle/master.svg
+:target: http://travis-ci.org/yougov/mettle
+
 Mettle is a framework for managing extract/transform/load (ETL) jobs.  ETL
 processes present a number of problems that Mettle is designed to solve:
+
+License
+=======
+
+License is indicated in the project metadata (typically one or more
+of the Trove classifiers). For more details, see `this explanation
+<https://github.com/jaraco/skeleton/issues/1>`_.
+
+Description
+===========
 
 - Jobs need to be run at specific times.  Sometimes they need to be triggered by
   the completion of other jobs.   Mettle supports scheduling both time-based
