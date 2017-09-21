@@ -46,7 +46,7 @@ params = dict(
         'psycogreen==1.0',
         'psycopg2==2.5.4',
         'PyYAML==3.11',
-        'spa>=0.0.7',
+        'spa==0.0.7',
         'sqlalchemy==0.9.8',
         'Werkzeug==0.10.1',
 
