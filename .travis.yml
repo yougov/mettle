@@ -33,4 +33,6 @@ cache: pip
 install:
 - pip install tox
 
-script: tox
+script:
+  - make dbsetup
+  - tox
