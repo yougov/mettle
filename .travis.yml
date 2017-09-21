@@ -34,5 +34,7 @@ install:
 - pip install tox
 
 script:
-  - bash dbsetup.sh
+  - make dbsetup
+  - tox --notest
+  - .tox/python/bin/mettle migrate
   - tox
