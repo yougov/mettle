@@ -34,7 +34,7 @@ params = dict(
         name.split('.')[:-1] if nspkg_technique == 'managed'
         else []
     ),
-    python_requires='>=2.7',
+    python_requires='>=2.7,<3.0',
     install_requires=[
         'Beaker==1.6.4',
         'croniter==0.3.5',
@@ -75,7 +75,6 @@ params = dict(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3",
     ],
     entry_points={
         'console_scripts': [
