@@ -53,7 +53,6 @@ apt-get install -y --force-yes \
     libjpeg-dev \
     libldap2-dev \
     libltdl7 \
-    libmagickwand-dev \
     libncurses5-dev \
     libpcre3-dev \
     libpq-dev \
