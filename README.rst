@@ -3,20 +3,11 @@
 
 .. image:: https://img.shields.io/pypi/pyversions/mettle.svg
 
-.. image:: https://img.shields.io/pypi/dm/mettle.svg
-
 .. image:: https://img.shields.io/travis/yougov/mettle/master.svg
    :target: http://travis-ci.org/yougov/mettle
 
 Mettle is a framework for managing extract/transform/load (ETL) jobs.  ETL
 processes present a number of problems that Mettle is designed to solve:
-
-License
-=======
-
-License is indicated in the project metadata (typically one or more
-of the Trove classifiers). For more details, see `this explanation
-<https://github.com/jaraco/skeleton/issues/1>`_.
 
 Description
 ===========
