@@ -6,12 +6,11 @@ VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.vm.box = "ubuntu/trusty64"
-    config.vm.box_url = "https://cloud-images.ubuntu.com/vagrant/trusty/current/trusty-server-cloudimg-amd64-vagrant-disk1.box"
     config.vm.hostname = "trusty"
 
     # https://github.com/mitchellh/vagrant/issues/1673
     config.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
-    config.vm.network :forwarded_port, guest: 8000, host: 8000 # Mettle web app 
+    config.vm.network :forwarded_port, guest: 8000, host: 8000 # Mettle web app
     config.vm.network :forwarded_port, guest: 15672, host: 15672 # Rabbit admin
 
     config.vm.provider :virtualbox do |v|
