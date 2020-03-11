@@ -40,7 +40,7 @@ params = dict(
         'croniter==0.3.5',
         'functools32==3.2.3-1',
         'gevent==1.1.2',
-        'gunicorn==19.1.1',
+        'gunicorn==19.5.0',
         'gwebsocket==0.9.8',
         'iso8601>=0.1.10',
         'pgpubsub>=0.0.4',
