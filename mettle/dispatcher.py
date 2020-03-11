@@ -29,14 +29,12 @@ def on_announce_service(settings, db, data):
         )
         db.add(service)
 
-    service.pipeline_names = data['pipeline_names']
-
-    # now disable any pipelines linked to this service that weren't included in
-    # this announcement.  We don't do the inverse though... Once deactivated, a
-    # pipeline must be manually re-activated in the UI.
-    for p in service.pipelines:
-        if p.name not in service.pipeline_names:
-            p.active = False
+    # Merge the existing pipeline names (if any) with the incoming pipeline_names
+    # from this announcement. This allows for multiple workers attending specific
+    # pipelines while still being part of the same service.
+    service.pipeline_names = list(
+        set(service.pipeline_names) | set(data['pipeline_names'])
+    )
 
 
 def on_pipeline_run_ack(settings, rabbit, db, data):
