@@ -46,7 +46,7 @@ params = dict(
         'pgpubsub>=0.0.4',
         'psycogreen==1.0',
         'psycopg2-binary==2.7.7',
-        'PyYAML==3.11',
+        'PyYAML==5.4',
         'spa==0.0.7',
         'sqlalchemy==0.9.8',
         'Werkzeug==0.10.1',
