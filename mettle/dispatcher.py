@@ -5,12 +5,13 @@ import utc
 import pika
 import isodate
 from sqlalchemy.exc import OperationalError
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from mettle.settings import get_settings
-from mettle.models import Service, Pipeline, PipelineRun, PipelineRunNack, Job, Checkin
+from mettle.models import Service, PipelineRun, PipelineRunNack, Job, Checkin
 from mettle.lock import lock_and_announce_job
-from mettle.db import make_session_cls
 from mettle.notify import notify_failed_run
 import mettle_protocol as mp
 
@@ -165,26 +166,29 @@ def main():
                       queue=queue_name,
                       routing_key='timer')
 
-    Session = make_session_cls(settings.db_url)
-
+    engine = create_engine(settings.db_url, echo=False)
+    Session = sessionmaker(engine)
+    
     for method, properties, body in rabbit.consume(queue=queue_name):
-        db = Session()
-        if method.exchange == mp.ANNOUNCE_SERVICE_EXCHANGE:
-            on_announce_service(settings, db, json.loads(body))
-        elif method.exchange == mp.ACK_PIPELINE_RUN_EXCHANGE:
-            on_pipeline_run_ack(settings, rabbit, db, json.loads(body))
-        elif method.exchange == mp.NACK_PIPELINE_RUN_EXCHANGE:
-            on_pipeline_run_nack(settings, rabbit, db, json.loads(body))
-        elif method.exchange == mp.CLAIM_JOB_EXCHANGE:
-            on_job_claim(settings, rabbit, db, json.loads(body),
-                         properties.correlation_id)
-        elif method.exchange == mp.END_JOB_EXCHANGE:
-            on_job_end(settings, rabbit, db, json.loads(body))
-        # get messages from process timer restart queue
-        elif method.exchange == settings.dispatcher_ping_exchange:
-            db.merge(Checkin(proc_name='dispatcher', time=utc.now()))
-        db.commit()
-        rabbit.basic_ack(method.delivery_tag)
+        with Session() as db:
+            if method.exchange == mp.ANNOUNCE_SERVICE_EXCHANGE:
+                on_announce_service(settings, db, json.loads(body))
+            elif method.exchange == mp.ACK_PIPELINE_RUN_EXCHANGE:
+                on_pipeline_run_ack(settings, rabbit, db, json.loads(body))
+            elif method.exchange == mp.NACK_PIPELINE_RUN_EXCHANGE:
+                on_pipeline_run_nack(settings, rabbit, db, json.loads(body))
+            elif method.exchange == mp.CLAIM_JOB_EXCHANGE:
+                on_job_claim(settings, rabbit, db, json.loads(body),
+                             properties.correlation_id)
+            elif method.exchange == mp.END_JOB_EXCHANGE:
+                on_job_end(settings, rabbit, db, json.loads(body))
+                # get messages from process timer restart queue
+            elif method.exchange == settings.dispatcher_ping_exchange:
+                db.merge(Checkin(proc_name='dispatcher', time=utc.now()))
+                db.commit()
+                rabbit.basic_ack(method.delivery_tag)
 
+    engine.dispose()
+    
 if __name__ == '__main__':
     main()

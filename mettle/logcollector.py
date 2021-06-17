@@ -4,10 +4,11 @@ import textwrap
 
 import pika
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from mettle.settings import get_settings
 from mettle.models import JobLogLine
-from mettle.db import make_session_cls
 import mettle_protocol as mp
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,8 @@ def main():
     logger.info('Bound exchange %s to queue %s' % (mp.JOB_LOGS_EXCHANGE,
                                                    queue_name))
 
-    Session = make_session_cls(settings.db_url)
+    engine = create_engine(settings.db_url, echo=False)
+    Session = sessionmaker(bind=engine)
     for method, properties, body in rabbit.consume(queue=queue_name):
         db = Session()
         data = json.loads(body)
@@ -62,7 +64,10 @@ def main():
                     old=existing_line.message,
                     new=message,
                 ))
-
+        finally:
+            db.close()
+            engine.dispose()
+            
         rabbit.basic_ack(method.delivery_tag)
 
 if __name__ == '__main__':
