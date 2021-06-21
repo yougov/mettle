@@ -48,7 +48,7 @@ params = dict(
         'psycopg2-binary==2.7.7',
         'PyYAML==3.11',
         'spa==0.0.7',
-        'sqlalchemy==0.9.8',
+        'sqlalchemy==1.3.0',
         'Werkzeug==0.10.1',
 
         # leave mettle-protocol and its dependencies loosely versioned.
