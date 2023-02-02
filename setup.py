@@ -49,7 +49,7 @@ params = dict(
         'PyYAML==3.11',
         'spa==0.0.7',
         'sqlalchemy==0.9.8',
-        'Werkzeug==0.10.1',
+        'Werkzeug==0.15.5',
 
         # leave mettle-protocol and its dependencies loosely versioned.
         'mettle-protocol>=1.0.1',
